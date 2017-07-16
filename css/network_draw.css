@@ -1,0 +1,8 @@
+.wrapper {
+	margin: 0 auto;
+	text-align: center;
+}
+
+#main_canvas {
+	border: 1px solid gray;
+}
