@@ -153,7 +153,7 @@ var Main = function(init) {
 	main.Node.prototype.get_nodes_within_distance = function(dist) {
 		var node = this, q = []; 
 		
-		main.all_nodes.forEach(function(nd) {
+		main.all_grid_nodes.forEach(function(nd) {
 			var d = main.get_node_distance(node, nd);
 			if (d <= dist) {
 				q.push(nd);
@@ -476,6 +476,12 @@ Main.prototype.click = function(e) {
 			main.click_container.init_creeper.dead = false;
 			main.click_mode = "place creeper";
 			main.start_anim();
+			
+			// just to see...
+			var q = click_thing.pick_target_nodes(75);
+			q.forEach(function(nd) {
+				nd.draw("#00ff2e");
+			});
 		}
 	}
 	//console.log("main: ", main);
