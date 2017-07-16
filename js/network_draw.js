@@ -38,7 +38,7 @@ var Main = function(init) {
 	
 	// some ui stuff
 	main.click_mode = "place creeper"; // options are "place creeper" and "place target"
-	
+	main.anim_running = false;
 	// click listener
 	/*
 	main.elem.addEventListener("click", function(e) {
@@ -181,6 +181,12 @@ var Main = function(init) {
 		return q;
 	};
 	
+	main.Node.prototype.make_target_nodes = function(dist) {
+		var node = this;
+		
+		var q = [];
+	};
+	
 	// Creeper -- creeps up all around
 	main.Creeper = function(init) {
 		var creep = this;
@@ -235,13 +241,33 @@ var Main = function(init) {
 	main.Creeper.prototype.approach = function(t_nd, v) {
 		var creep = this;
 		
+		// calculate distance
 		var dt = Date.now() - main.last_tick;
-		var uv = main.dir_unit_vector(creep.nd, t_nd);
 		var creep_dist = (v/1000.0) * dt;
+		
+		// get direction -- this is for one target
+		/*
+		var uv = main.dir_unit_vector(creep.nd, t_nd);
 		
 		uv.mul(creep_dist);
 		creep.nd.raw_pt.x += uv.x;
 		creep.nd.raw_pt.y += uv.y;
+		creep.nd.rewobble();
+		*/
+		
+		// try for all targets
+		var accum = new main.Pt({x: 0, y: 0});
+		//console.log("main.all_target_nodes: ", main.all_target_nodes);
+		main.all_target_nodes.forEach(function(t) {
+			var uv = main.dir_unit_vector(creep.nd, t);
+			accum.x += uv.x;
+			accum.y += uv.y;
+		});
+		
+		var dir = main.norm(accum);
+		dir.mul(creep_dist);
+		creep.nd.raw_pt.x += dir.x;
+		creep.nd.raw_pt.y += dir.y;
 		creep.nd.rewobble();
 		
 	};
@@ -266,10 +292,11 @@ var Main = function(init) {
 	main.Creeper.prototype.check_dead = function() {
 		var creep = this;
 		
-		var dist = main.get_node_distance(creep.nd, creep.target);
-		if (dist < 10.0) {
-			creep.dead = true;
-		}
+		// need to fix this to check for any nearby node
+		//var dist = main.get_node_distance(creep.nd, creep.target);
+		//if (dist < 10.0) {
+		//	creep.dead = true;
+		//}
 		
 		return creep.dead;
 	};
@@ -303,6 +330,15 @@ Main.prototype.add_node_for_creeper = function(init) {
 	
 	main.all_grid_nodes.push(node);
 	main.nodes_id_dict[node.id] = main.all_grid_nodes.length - 1;
+	return node;
+};
+
+Main.prototype.add_target_node = function(init) {
+	var main = this;
+	
+	var node = new main.Node(init);
+	
+	main.all_target_nodes.push(node);
 	return node;
 };
 
@@ -374,6 +410,13 @@ Main.prototype.dir_unit_vector = function(nd1, nd2) {
 	new_y = (diff_y/dist);
 	
 	return new main.Pt({x: new_x, y: new_y});
+};
+
+Main.prototype.norm = function(pt) {
+	var main = this;
+	
+	var hyp = Math.sqrt(pt.x * pt.x + pt.y * pt.y);
+	return new main.Pt({x: pt.x / hyp, y: pt.y / hyp});
 };
 
 // not using this
@@ -456,6 +499,14 @@ Main.prototype.get_distance_sorted_nodes = function(nd) {
 	return main.all_grid_nodes.sort(dist_compare);
 };
 
+Main.prototype.rng = function(n1, n2) {
+	var main = this;
+	
+	var r = Math.random();
+	var diff = n2 - n1;
+	var temp = Math.round(r * diff);
+	return n1 + temp;
+};
 
 Main.prototype.click = function(e) {
 	var main = this;
@@ -468,7 +519,7 @@ Main.prototype.click = function(e) {
 			click_thing = main.add_creeper({x: click_pt.x, y: click_pt.y});
 			click_thing.dead = true;
 			main.click_container.init_creeper = click_thing;
-			main.click_mode = "place target";
+			main.click_mode = "place many targets";
 		}
 		else if (main.click_mode === "place target") {
 			click_thing = new main.Node({x: click_pt.x, y: click_pt.y});
@@ -476,12 +527,19 @@ Main.prototype.click = function(e) {
 			main.click_container.init_creeper.dead = false;
 			main.click_mode = "place creeper";
 			main.start_anim();
-			
+		}
+		else if (main.click_mode === "place many targets") {
 			// just to see...
+			click_thing = main.add_target_node({x: click_pt.x, y: click_pt.y});
 			var q = click_thing.pick_target_nodes(75);
 			q.forEach(function(nd) {
+				main.all_target_nodes.push(nd);
 				nd.draw("#00ff2e");
 			});
+			main.click_container.init_creeper.dead = false;
+			if (! main.anim_running) {
+				main.start_anim();
+			}
 		}
 	}
 	//console.log("main: ", main);
@@ -533,7 +591,10 @@ Main.prototype.start_anim = function() {
 	main.last_tick = Date.now();
 	var int;
 	main.int = window.setInterval(main.tick.bind(main), main.tick_interval);
-	
+	if (main.int) {
+		console.log("anim running");
+		main.anim_running = true;
+	}
 	/*
 	try {
 		int = window.setInterval(main.tick.bind(main), main.tick_interval);
