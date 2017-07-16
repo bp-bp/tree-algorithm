@@ -131,6 +131,7 @@ var Main = function(init) {
 		//node.raw_pt = init.pt; // where the node 'really' is
 		node.pt = new main.Pt({x: node.raw_pt.x + main.get_wobble(), y: node.raw_pt.y + main.get_wobble()}); // where the node will be drawn
 		node.is_target = init.is_target != undefined ? init.is_target : false; // is this how I want to do this?
+		node.target_dead = false;
 		if (node.is_target) {
 			main.all_target_nodes.push(node);
 		}
@@ -181,6 +182,7 @@ var Main = function(init) {
 		return q;
 	};
 	
+	// not sure I'm going to do this
 	main.Node.prototype.make_target_nodes = function(dist) {
 		var node = this;
 		
@@ -241,28 +243,67 @@ var Main = function(init) {
 	main.Creeper.prototype.approach = function(t_nd, v) {
 		var creep = this;
 		
-		// calculate distance
+		// stop if we're dead
+		if (creep.dead) {
+			return;
+		}
+		
+		// die if there are no targets
+		if (! main.all_target_nodes.length) {
+			creep.dead = true;
+			return;
+		}
+		
+		// calculate distance to creep
 		var dt = Date.now() - main.last_tick;
 		var creep_dist = (v/1000.0) * dt;
 		
-		// get direction -- this is for one target
-		/*
-		var uv = main.dir_unit_vector(creep.nd, t_nd);
-		
-		uv.mul(creep_dist);
-		creep.nd.raw_pt.x += uv.x;
-		creep.nd.raw_pt.y += uv.y;
-		creep.nd.rewobble();
-		*/
-		
-		// try for all targets
+		// now direction, determined by all targets
 		var accum = new main.Pt({x: 0, y: 0});
 		//console.log("main.all_target_nodes: ", main.all_target_nodes);
 		main.all_target_nodes.forEach(function(t) {
-			var uv = main.dir_unit_vector(creep.nd, t);
+			if (! t.is_target) {
+				return;
+			}
+			// first check to see if we're dead
+			var dist = main.get_node_distance(creep.nd, t);
+			if (dist <= 3.0) {
+				creep.dead = true;
+				t.is_target = false;
+				console.log("dead");
+				return;
+			}
+			
+			// now accumulate movement 
+			var uv = main.dir_with_inv_sq(creep.nd, t);
 			accum.x += uv.x;
 			accum.y += uv.y;
 		});
+		
+		// now add repulsion from other creepers
+		// not working yet, creepers spawn right on top of each other...
+		/*
+		main.all_creepers.forEach(function(c) {
+			// ignore ourselves
+			if (c.id === creep.id) {
+				return;
+			}
+			
+			// direction towards other creeper
+			//var dist = main.get_node_distance(creep.nd, c.nd);
+			var uv = main.dir_with_inv_sq(creep.nd, c.nd)
+			console.log("first uv: ", uv);
+			// invert direction
+			uv.mul(-1.0);
+			// scale down
+			uv.mul(0.0);
+			
+			console.log("then uv: ", uv);
+			
+			accum.x += uv.x;
+			accum.y += uv.y;
+		});
+		*/
 		
 		var dir = main.norm(accum);
 		dir.mul(creep_dist);
@@ -286,7 +327,28 @@ var Main = function(init) {
 		
 		//console.log("creeper: ", creep);
 		creep.set_last();
+		creep.split();
 		creep.approach(creep.target, creep.init_velocity);
+	};
+	
+	main.Creeper.prototype.split = function() {
+		var creep = this;
+		
+		// maximum of 50 creepers
+		if (main.all_creepers.length > 50) {
+			return;
+		}
+		
+		// .5 chance per second to divide
+		var r = Math.random();
+		//r += 0.9995;
+		r += .02;
+		r = !!Math.trunc(r);
+		if (r) {
+			console.log("new creeper!");
+			//console.log("old creeper: ", creep);
+			main.add_creeper({x: creep.nd.raw_pt.x, y: creep.nd.raw_pt.y, velocity: creep.init_velocity});
+		}
 	};
 	
 	main.Creeper.prototype.check_dead = function() {
@@ -412,6 +474,16 @@ Main.prototype.dir_unit_vector = function(nd1, nd2) {
 	return new main.Pt({x: new_x, y: new_y});
 };
 
+Main.prototype.dir_with_inv_sq = function(nd1, nd2) {
+	var main = this;
+	
+	var dist = main.get_node_distance(nd1, nd2);
+	var uv = main.dir_unit_vector(nd1, nd2);
+	uv.mul((1/(dist * dist)));
+	
+	return uv;
+};
+
 Main.prototype.norm = function(pt) {
 	var main = this;
 	
@@ -511,6 +583,14 @@ Main.prototype.rng = function(n1, n2) {
 Main.prototype.click = function(e) {
 	var main = this;
 	
+	// test
+	var pt1 = new main.Pt({x: 4, y: 4});
+	var pt2 = new main.Pt({x: 5, y: 5});
+	var nd1 = new main.Node({pt: pt1});
+	var nd2 = new main.Node({pt: pt2});
+	console.log("here:");
+	console.log(main.dir_with_inv_sq(nd1, nd2));
+	
 	var click_pt, click_thing;
 	if (main.click_mode) {
 		click_pt = main.click_pos(e), click_thing;
@@ -558,6 +638,15 @@ Main.prototype.click_pos = function(e) {
 Main.prototype.process_creepers = function() {
 	var main = this;
 	
+	main.all_creepers = main.all_creepers.filter(function(c) {
+		return !c.dead;
+	});
+	
+	if (! main.all_creepers.length) {
+		console.log("all creepers dead, stopping");
+		main.stop_anim();
+	}
+	
 	main.all_creepers.forEach(function(c) {
 		if (! c.dead) {
 			//console.log("not dead");
@@ -568,21 +657,42 @@ Main.prototype.process_creepers = function() {
 	});
 };
 
+Main.prototype.clean_up_targets = function() {
+	var main = this;
+	
+	main.all_target_nodes = main.all_target_nodes.filter(function(nd) {
+		return nd.is_target;
+	});
+	
+	if (! main.all_target_nodes.length) {
+		console.log("all targets dead, stopping");
+		main.stop_anim();
+	}
+};
+
 Main.prototype.tick = function() {
 	var main = this;
 	//console.log("main: ", main);
 	
 	try {
 		// process creepers and stuff here
+		main.clean_up_targets();
 		main.process_creepers();
 
 		// finally
 		main.last_tick = Date.now();
 	}
 	catch(err) {
-		window.clearInterval(main.int);
+		//window.clearInterval(main.int);
+		main.stop_anim();
 		throw err;
 	}
+};
+
+Main.prototype.stop_anim = function() {
+	var main = this; 
+	
+	window.clearInterval(main.int);
 };
 
 Main.prototype.start_anim = function() {
