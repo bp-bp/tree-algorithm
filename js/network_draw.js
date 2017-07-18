@@ -1,7 +1,6 @@
 var Main = function(init) {
 	var main = this;
 	
-	// put something up here to validate all these init properties
 	main.elem = init.elem || null;
 	main.ctx = main.elem ? main.elem.getContext("2d") : null; 
 	
@@ -28,31 +27,11 @@ var Main = function(init) {
 	main.last_tick = 0; // time of last animation tick in milliseconds
 	main.tick_interval = init.tick_interval;  // animation tick interval in milliseconds
 	
-	// target(s) for creepers -- should be a Node
-	main.init_creep_target = init.init_creep_target;
-	// first creeper placed with mouse
-	main.init_creeper = null;
-	
-	// container to hold objects created when the user clicks
-	main.click_container = {};
-	
 	// some ui stuff
-	main.click_mode = "place creeper"; // options are "place creeper" and "place target"
+	main.click_mode = "place creeper"; // right now this is the only option
 	main.anim_running = false;
-	// click listener
-	/*
-	main.elem.addEventListener("click", function(e) {
-		//console.log("click: ", e);
-		var rect = main.elem.getBoundingClientRect();
-		var click_pt = new main.Pt({	x: Math.round((e.clientX - rect.left) / (rect.right - rect.left) * main.elem.width)
-										, y: Math.round((e.clientY - rect.top) / (rect.bottom - rect.top) * main.elem.height) });
-		
-		console.log("click_pt: ", click_pt);
-		var click_nd = main.add_grid_node({pt: click_pt});
-		click_nd.draw("#00ff2e");
-	});
-	*/
 	
+	// click listener
 	main.elem.addEventListener("click", main.click.bind(main));
 	
 	//********** object types
@@ -93,7 +72,7 @@ var Main = function(init) {
 		pt.y = pt.y * val;
 	};
 	
-	// do I want a divide here?
+	// do I want a divide method here?
 	
 	main.Pt.prototype.toString = function() {
 		var pt = this;
@@ -101,18 +80,18 @@ var Main = function(init) {
 		return pt.x.toString() + "," + pt.y.toString();
 	};
 	
-	// Node -- a potentially occupied point in the graph
+	// Node -- a potentially occupied point
 	main.Node = function(init) {
 		var node = this;
 		
 		// check params
 		// we could initialize with a Pt
 		if (init.pt && init.pt instanceof main.Pt) {
-			node.raw_pt = init.pt;
+			node.pt = new main.Pt({x: init.pt.x, y: init.pt.y});
 		}
 		// or we could have x,y coords
 		else if (init.x != undefined && (typeof init.x === "number") && init.y != undefined && (typeof init.y === "number")) {
-			node.raw_pt = new main.Pt({x: init.x, y: init.y});
+			node.pt = new main.Pt({x: init.x, y: init.y});
 		}
 		// otherwise crash gracelessly
 		else {
@@ -128,8 +107,6 @@ var Main = function(init) {
 			node.id = main.id_counter;
 		}
 		
-		//node.raw_pt = init.pt; // where the node 'really' is
-		node.pt = new main.Pt({x: node.raw_pt.x + main.get_wobble(), y: node.raw_pt.y + main.get_wobble()}); // where the node will be drawn
 		node.is_target = init.is_target != undefined ? init.is_target : false; // is this how I want to do this?
 		node.target_dead = false;
 		if (node.is_target) {
@@ -141,13 +118,6 @@ var Main = function(init) {
 		var node = this;
 		
 		main.draw_node(node, color);
-	};
-	
-	main.Node.prototype.rewobble = function() {
-		var node = this;
-		
-		node.pt.x = node.raw_pt.x + main.get_wobble();
-		node.pt.y = node.raw_pt.y + main.get_wobble();
 	};
 	
 	// returns array of all grid nodes within a given distance of this node
@@ -182,34 +152,22 @@ var Main = function(init) {
 		return q;
 	};
 	
-	// not sure I'm going to do this
-	main.Node.prototype.make_target_nodes = function(dist) {
-		var node = this;
-		
-		var q = [];
-	};
-	
 	// Creeper -- creeps up all around
 	main.Creeper = function(init) {
 		var creep = this;
 		
-		//console.log("creep init: ", init);
 		// handle location -- init should contain a pt, or an x,y 
-		// we will construct a Node for it here so we can keep it out of the node position dict
 		if (init.pt && (init.pt instanceof main.Pt)) {
 			creep.nd = main.add_node_for_creeper(init.pt);
 		}
 		else if (init.x != undefined && (typeof init.x === "number") && init.y != undefined && (typeof init.y === "number")) {
-			//console.log("here");
 			creep.nd = main.add_node_for_creeper(init);
-			//console.log("creep.nd: ", creep.nd);
 		}
 		else {
 			throw new Error("problem with Creeper init, no Pt or x,y provided. Init: " + init);
 		}
 		// last loc is a node, it's the creeper's location on the last animation tick
-		// note that we have to manually set the pt.x and pt.y or it'll get a different wobble
-		creep.last_loc = new main.Node({pt: creep.nd.raw_pt});
+		creep.last_loc = new main.Node({pt: creep.nd.pt});
 		creep.last_loc.pt.x = creep.nd.pt.y;
 		creep.last_loc.pt.y = creep.nd.pt.y;
 		
@@ -234,8 +192,7 @@ var Main = function(init) {
 			creep.id = main.id_counter;
 		}
 		
-		//creep.nd = init.nd;
-		creep.color = init.color || "#b00000";
+		creep.color = init.color || "#004377";
 		creep.dead = false;
 	};
 	
@@ -260,17 +217,20 @@ var Main = function(init) {
 		
 		// now direction, determined by all targets
 		var accum = new main.Pt({x: 0, y: 0});
-		//console.log("main.all_target_nodes: ", main.all_target_nodes);
 		main.all_target_nodes.forEach(function(t) {
 			if (! t.is_target) {
 				return;
 			}
-			// first check to see if we're dead
+			// first check to see if the creeper should die
 			var dist = main.get_node_distance(creep.nd, t);
 			if (dist <= 3.0) {
 				creep.dead = true;
 				t.is_target = false;
-				console.log("dead");
+				t.draw("black");
+				return;
+			}
+			// now check to see if this target is too far away to affect the creeper
+			else if (dist > 50.0) {
 				return;
 			}
 			
@@ -280,8 +240,14 @@ var Main = function(init) {
 			accum.y += uv.y;
 		});
 		
+		// if no targets affected the creeper, die
+		if (accum.x === 0 && accum.y === 0) {
+			creep.dead = true;
+		}
+		
 		// now add repulsion from other creepers
-		// not working yet, creepers spawn right on top of each other...
+		// this works, but doesn't look as cool. leave it turned off. remember to add non-0 scaling
+		// factor when turning back on
 		/*
 		main.all_creepers.forEach(function(c) {
 			// ignore ourselves
@@ -290,15 +256,11 @@ var Main = function(init) {
 			}
 			
 			// direction towards other creeper
-			//var dist = main.get_node_distance(creep.nd, c.nd);
 			var uv = main.dir_with_inv_sq(creep.nd, c.nd)
-			console.log("first uv: ", uv);
 			// invert direction
 			uv.mul(-1.0);
 			// scale down
 			uv.mul(0.0);
-			
-			console.log("then uv: ", uv);
 			
 			accum.x += uv.x;
 			accum.y += uv.y;
@@ -307,17 +269,14 @@ var Main = function(init) {
 		
 		var dir = main.norm(accum);
 		dir.mul(creep_dist);
-		creep.nd.raw_pt.x += dir.x;
-		creep.nd.raw_pt.y += dir.y;
-		creep.nd.rewobble();
-		
+		creep.nd.pt.x += dir.x;
+		creep.nd.pt.y += dir.y;
 	};
 	
 	main.Creeper.prototype.set_last = function() {
 		var creep = this;
 		
-		creep.last_loc = new main.Node({pt: creep.nd.raw_pt});
-		// note that we have to manually set the pt.x and pt.y or it'll get a different wobble
+		creep.last_loc = new main.Node({pt: creep.nd.pt});
 		creep.last_loc.pt.x = creep.nd.pt.x;
 		creep.last_loc.pt.y = creep.nd.pt.y;
 	};
@@ -325,40 +284,35 @@ var Main = function(init) {
 	main.Creeper.prototype.creep = function() {
 		var creep = this;
 		
-		//console.log("creeper: ", creep);
 		creep.set_last();
 		creep.split();
 		creep.approach(creep.target, creep.init_velocity);
 	};
 	
-	main.Creeper.prototype.split = function() {
+	main.Creeper.prototype.split = function(force_split) {
 		var creep = this;
 		
 		// maximum of 50 creepers
-		if (main.all_creepers.length > 50) {
+		if (main.all_creepers.length > 50 && !force_split) {
 			return;
 		}
 		
-		// .5 chance per second to divide
+		if (force_split) {
+			return main.add_creeper({x: creep.nd.pt.x + .5, y: creep.nd.pt.y + .5, velocity: creep.init_velocity});
+		}
+		
 		var r = Math.random();
-		//r += 0.9995;
-		r += .02;
+		r += .1;
 		r = !!Math.trunc(r);
 		if (r) {
-			console.log("new creeper!");
-			//console.log("old creeper: ", creep);
-			main.add_creeper({x: creep.nd.raw_pt.x, y: creep.nd.raw_pt.y, velocity: creep.init_velocity});
+			return main.add_creeper({x: creep.nd.pt.x + .5, y: creep.nd.pt.y + .5, velocity: creep.init_velocity});
 		}
 	};
 	
 	main.Creeper.prototype.check_dead = function() {
 		var creep = this;
 		
-		// need to fix this to check for any nearby node
-		//var dist = main.get_node_distance(creep.nd, creep.target);
-		//if (dist < 10.0) {
-		//	creep.dead = true;
-		//}
+		// I could put some more stuff here -- currently all handled in .approach method
 		
 		return creep.dead;
 	};
@@ -366,7 +320,6 @@ var Main = function(init) {
 	main.Creeper.prototype.draw = function() {
 		var creep = this;
 		
-		//creep.nd.draw(creep.color);
 		main.draw_connect_nodes(creep.last_loc, creep.nd, creep.color);
 	};
 };
@@ -380,7 +333,7 @@ Main.prototype.add_grid_node = function(init) {
 	
 	main.all_grid_nodes.push(node);
 	main.nodes_id_dict[node.id] = main.all_grid_nodes.length - 1;
-	main.nodes_pos_dict[node.raw_pt.toString()] = main.all_grid_nodes.length - 1;
+	main.nodes_pos_dict[node.pt.toString()] = main.all_grid_nodes.length - 1;
 	return node;
 };
 
@@ -464,8 +417,8 @@ Main.prototype.dir_unit_vector = function(nd1, nd2) {
 	
 	var diff_x, diff_y, dist, new_x, new_y;
 	
-	diff_x = (nd2.raw_pt.x - nd1.raw_pt.x);
-	diff_y = (nd2.raw_pt.y - nd1.raw_pt.y);
+	diff_x = (nd2.pt.x - nd1.pt.x);
+	diff_y = (nd2.pt.y - nd1.pt.y);
 	dist = main.get_node_distance(nd1, nd2);
 	// these guys will be the unit vector pointing in the right direction
 	new_x = (diff_x/dist);
@@ -491,67 +444,17 @@ Main.prototype.norm = function(pt) {
 	return new main.Pt({x: pt.x / hyp, y: pt.y / hyp});
 };
 
-// not using this
-// returns the next node on a path from nd1 to nd2... sort of, rethinking this
-Main.prototype.approach_by_grid_step = function(nd1, nd2) {
-	var main = this;
-	
-	/*
-	var diff_x = (nd2.raw_pt.x - nd1.raw_pt.x);
-	var diff_y = (nd2.raw_pt.y - nd1.raw_pt.y);
-	var dist = main.get_node_distance(nd1, nd2);
-	console.log("diff_x: ", diff_x);
-	console.log("diff_y: ", diff_y);
-	console.log("dist: ", dist);
-	//var thing = Math.sqrt(diff_x * diff_x + diff_y * diff_y);
-	//console.log("thing: ", thing);
-	
-	// these guys will be the unit vector pointing in the right direction
-	var new_x = (diff_x/dist);
-	var new_y = (diff_y/dist);
-	*/
-	
-	var uv = main.dir_unit_vector(nd1, nd2);
-	var new_x = uv.x;
-	var new_y = uv.y;
-	
-	var ang = (Math.atan2(new_y, new_x) * 180.0) / Math.PI;
-	//console.log("ang: ", ang);
-	
-	//console.log("new_x: ", new_x, "new_y: ", new_y);
-	
-	new_x = Math.round(new_x);
-	new_y = Math.round(new_y);
-	//console.log("Now ---- new_x: ", new_x, "new_y: ", new_y);
-	
-	new_x = nd1.raw_pt.x + (new_x * main.grid_unit);
-	new_y = nd1.raw_pt.y + (new_y * main.grid_unit);
-	
-	new_x = Math.floor(new_x/main.grid_unit) * main.grid_unit;
-	new_y = Math.floor(new_y/main.grid_unit) * main.grid_unit;
-	
-	//console.log("nd1: ", nd1.raw_pt, " nd2: ", nd2.raw_pt, " new: ", new main.Pt({x: new_x, y: new_y}));
-	
-	var new_node = main.add_grid_node({x: new_x, y: new_y});
-	//main.draw_node(new_node, "#00ff11");
-	new_node.draw("#00ff11");
-	
-	return new_node;
-};
-
-
-
 // distance between two nodes
 Main.prototype.get_node_distance = function(nd1, nd2) {
-	var x_diff = Math.abs(nd1.raw_pt.x - nd2.raw_pt.x);
-	var y_diff = Math.abs(nd1.raw_pt.y - nd2.raw_pt.y);
+	var x_diff = Math.abs(nd1.pt.x - nd2.pt.x);
+	var y_diff = Math.abs(nd1.pt.y - nd2.pt.y);
 	var dist = Math.sqrt(x_diff * x_diff + y_diff * y_diff);
 	
-	//console.log("x_diff: ", x_diff, " y_diff: ", y_diff, " dist: ", dist);
 	return dist;
 };
 
 // get an array of all nodes sorted by distance from a given node
+// want to keep this around
 Main.prototype.get_distance_sorted_nodes = function(nd) {
 	var main = this;
 	
@@ -588,42 +491,19 @@ Main.prototype.click = function(e) {
 	var pt2 = new main.Pt({x: 5, y: 5});
 	var nd1 = new main.Node({pt: pt1});
 	var nd2 = new main.Node({pt: pt2});
-	console.log("here:");
-	console.log(main.dir_with_inv_sq(nd1, nd2));
 	
-	var click_pt, click_thing;
+	var click_pt;
 	if (main.click_mode) {
-		click_pt = main.click_pos(e), click_thing;
+		click_pt = main.click_pos(e);
 
 		if (main.click_mode === "place creeper") {
-			click_thing = main.add_creeper({x: click_pt.x, y: click_pt.y});
-			click_thing.dead = true;
-			main.click_container.init_creeper = click_thing;
-			main.click_mode = "place many targets";
-		}
-		else if (main.click_mode === "place target") {
-			click_thing = new main.Node({x: click_pt.x, y: click_pt.y});
-			main.click_container.init_creeper.target = click_thing;
-			main.click_container.init_creeper.dead = false;
-			main.click_mode = "place creeper";
-			main.start_anim();
-		}
-		else if (main.click_mode === "place many targets") {
-			// just to see...
-			click_thing = main.add_target_node({x: click_pt.x, y: click_pt.y});
-			var q = click_thing.pick_target_nodes(75);
-			q.forEach(function(nd) {
-				main.all_target_nodes.push(nd);
-				nd.draw("#00ff2e");
-			});
-			main.click_container.init_creeper.dead = false;
+			// drop three of them
+			main.add_creeper({x: click_pt.x, y: click_pt.y}).split(true).split(true);
 			if (! main.anim_running) {
 				main.start_anim();
 			}
 		}
 	}
-	//console.log("main: ", main);
-	//console.log("main.click_mode: ", main.click_mode);
 };
 
 Main.prototype.click_pos = function(e) {
@@ -649,7 +529,6 @@ Main.prototype.process_creepers = function() {
 	
 	main.all_creepers.forEach(function(c) {
 		if (! c.dead) {
-			//console.log("not dead");
 			c.creep();
 			c.check_dead();
 			c.draw();
@@ -672,7 +551,6 @@ Main.prototype.clean_up_targets = function() {
 
 Main.prototype.tick = function() {
 	var main = this;
-	//console.log("main: ", main);
 	
 	try {
 		// process creepers and stuff here
@@ -683,7 +561,6 @@ Main.prototype.tick = function() {
 		main.last_tick = Date.now();
 	}
 	catch(err) {
-		//window.clearInterval(main.int);
 		main.stop_anim();
 		throw err;
 	}
@@ -693,6 +570,8 @@ Main.prototype.stop_anim = function() {
 	var main = this; 
 	
 	window.clearInterval(main.int);
+	main.int = null;
+	main.anim_running = false;
 };
 
 Main.prototype.start_anim = function() {
@@ -705,14 +584,6 @@ Main.prototype.start_anim = function() {
 		console.log("anim running");
 		main.anim_running = true;
 	}
-	/*
-	try {
-		int = window.setInterval(main.tick.bind(main), main.tick_interval);
-	}
-	catch(e) {
-		window.clearInterval(int);
-	}
-	*/
 };
 
 
@@ -722,6 +593,10 @@ Main.prototype.run = function() {
 	var main = this;
 	
 	console.log("running");
+	// clear canvas
+	main.ctx.rect(0, 0, main.elem.width, main.elem.height);
+	main.ctx.fillStyle = "black";
+	main.ctx.fill();
 	
 	// setup grid
 	var pos_x = 0, pos_y = 0, nd;
@@ -732,57 +607,13 @@ Main.prototype.run = function() {
 		for (y = 0; y < grid_count_y; y++) {
 			pos_x = (x * main.grid_unit);
 			pos_y = (y * main.grid_unit);
-			//console.log("pos_x: ", pos_x);
-			nd = main.add_grid_node({x: pos_x, y: pos_y});
-			//main.draw_node(nd, "#afafaf");
-			nd.draw("#afafaf");
+			if (!!Math.round(Math.random())) {
+				nd = main.add_target_node({x: pos_x, y: pos_y});
+				nd.is_target = true
+				nd.draw("#afafaf");
+			}
 		}
 	}
-	
-	// setup creepers
-	//var creep_target = main.all_grid_nodes[1645];
-	//var creep = main.add_creeper({x: 50, y: 50, target: creep_target, velocity: 50});
-	//creep_target.draw("#ff0033");
-	
-	//main.start_anim();
-	
-	//main.get_distance_sorted_nodes(main.all_grid_nodes[20]);
-	//main.draw_node(main.all_grid_nodes[65], "#ff0033");
-	//main.draw_node(main.all_grid_nodes[837], "#ff0033");
-	
-	/*
-	main.all_grid_nodes[65].draw("#ff0033");
-	main.all_grid_nodes[837].draw("#ff0033");
-	
-	var nd1 = main.all_grid_nodes[65], nd2 = main.all_grid_nodes[837];
-	//main.approach_by_grid_step(nd1, nd2);
-	
-	
-	var c;
-	for (c = 0; c < 20; c++) {
-		nd1 = main.approach_by_grid_step(nd1, nd2);
-	}
-	*/
-	
-	/*
-	while (pos_x < main.elem.width) {
-		pos_x += (main.grid_unit + (Math.floor(Math.random() * (main.wobble * 2)) - main.wobble));
-		while (pos_y < main.elem.height) {
-			pos_y += (main.grid_unit + (Math.floor(Math.random() * (main.wobble * 2)) - main.wobble));
-			nd = main.add_grid_node({x: pos_x, y: pos_y});
-			//main.draw_node(nd);
-			nd.draw();
-		}
-		
-	}
-	*/
-	
-	// start animating
-	/*
-	window.setInterval(function() {
-		console.log("interval");
-	}, 1000);
-	*/
 };
 
 
