@@ -32,14 +32,22 @@ h6 {font-size: 1rem;}
 	display: inline-block;
 	margin-right: 3rem;
 }
+
 .wrapper {
 	margin: 0 auto;
 	text-align: center;
 	background-color: black;
-	width: 100%;
 }
-
-#main_canvas {
+.column {
+	width: 610px;
+	display: inline-block;
+	padding: 0 5px;
+}
+.main-canvas {
 	border: 1px solid gray;
-	width: 100%;
+}
+.panel-container {
+}
+@media(min-width: 610px) {
+	
 }

@@ -616,13 +616,16 @@ Main.prototype.run = function() {
 	}
 };
 
+window.branches = {	grid_unit: 7
+				   	, wobble: 0.1
+				};
 
 var app;
 window.addEventListener("load", function() { 
 	var elem = document.getElementById("main_canvas");
-	var grid_unit = 10;
-	var wobble = 0.1;
+	//var grid_unit = 10;
+	//var wobble = 0.1;
 	
-	app = new Main({elem: elem, grid_unit: grid_unit, wobble: wobble, tick_interval: 33});
+	app = new Main({elem: elem, grid_unit: branches.grid_unit, wobble: branches.wobble, tick_interval: 33});
 });
 
