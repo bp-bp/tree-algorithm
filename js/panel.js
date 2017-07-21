@@ -1,7 +1,9 @@
 angular.module("app", []);
 
 function panel_ctrl() {
-	console.log("panel_ctrl");
+	this.branch_params = Branch_Params.get_inst();
+	
+	
 }
 
 angular.module("app").controller("panel_ctrl", [panel_ctrl]);

@@ -1,31 +1,53 @@
+// singleton to share animation parameters with angular control panel
+var Branch_Params = (function() {
+	var inst;
+	
+	function create_inst() {
+		var thing = {	what: "it is me"
+						, num: 2
+						, grid_unit: 7
+						, max_creepers: 20
+					};
+		return thing;
+	}
+	
+	return {
+		get_inst: function() {
+			if (! inst) {
+				inst = create_inst();
+			}
+			return inst;
+		}
+	};
+})();
+
 var Main = function(init) {
 	var main = this;
 	
+	main.branch_params = Branch_Params.get_inst();
+	main.branch_params.main_init = main.init.bind(main);
 	main.elem = init.elem || null;
 	main.ctx = main.elem ? main.elem.getContext("2d") : null; 
 	
 	main.id_counter = 0;
 	
-	// keep track of nodes
-	main.all_grid_nodes = [];
-	main.nodes_id_dict = {}; // key is id, value is idx in main.all_grid_nodes -- is this useful?
-	main.nodes_pos_dict = {}; // key is x,y, value is idx in main.all_grid_nodes. does not contain creeper nodes
-	
 	// keep track of creepers
 	main.all_creepers = [];
-	main.creepers_id_dict = {}; // key is id, value is idx in main.all_creepers
+	//main.creepers_id_dict = {}; // key is id, value is idx in main.all_creepers
 	
 	// target/attractor nodes
 	main.all_target_nodes = [];
 	
 	// some constants
-	main.grid_unit = init.grid_unit || null;
+	main.grid_unit = main.branch_params.grid_unit;//init.grid_unit || null;
 	main.wobble = init.wobble || 0;
 	main.wobble = Math.floor(main.wobble * main.grid_unit);
 	
 	// for animation
 	main.last_tick = 0; // time of last animation tick in milliseconds
 	main.tick_interval = init.tick_interval;  // animation tick interval in milliseconds
+	main.start_time = 0; // time we started the animation -- used to keep creepers from dying for the first few seconds
+	main.int = null; // will be reference to animation interval
 	
 	// some ui stuff
 	main.click_mode = "place creeper"; // right now this is the only option
@@ -95,7 +117,7 @@ var Main = function(init) {
 		}
 		// otherwise crash gracelessly
 		else {
-			throw new Error("problem with Node init, neither a Pt nor an xy provided. Init: " + init);
+			throw new Error("problem with Node init, neither a Pt nor an x,y provided. Init: " + init);
 		}
 		
 		// handle id
@@ -121,10 +143,10 @@ var Main = function(init) {
 	};
 	
 	// returns array of all grid nodes within a given distance of this node
-	main.Node.prototype.get_nodes_within_distance = function(dist) {
+	main.Node.prototype.get_target_nodes_within_distance = function(dist) {
 		var node = this, q = []; 
 		
-		main.all_grid_nodes.forEach(function(nd) {
+		main.all_target_nodes.forEach(function(nd) {
 			var d = main.get_node_distance(node, nd);
 			if (d <= dist) {
 				q.push(nd);
@@ -135,6 +157,7 @@ var Main = function(init) {
 	};
 	
 	// marks and returns array of randomly selected grid nodes within a given distance of this node
+	/*
 	main.Node.prototype.pick_target_nodes = function(dist) {
 		var node = this;
 		
@@ -151,6 +174,7 @@ var Main = function(init) {
 		
 		return q;
 	};
+	*/
 	
 	// Creeper -- creeps up all around
 	main.Creeper = function(init) {
@@ -246,8 +270,8 @@ var Main = function(init) {
 		}
 		
 		// now add repulsion from other creepers
-		// this works, but doesn't look as cool. leave it turned off. remember to add non-0 scaling
-		// factor when turning back on
+		// this works, but doesn't look as cool. let's leave it turned off. 
+		// remember to add non-0 scaling factor if turning back on
 		/*
 		main.all_creepers.forEach(function(c) {
 			// ignore ourselves
@@ -293,7 +317,7 @@ var Main = function(init) {
 		var creep = this;
 		
 		// maximum of 50 creepers
-		if (main.all_creepers.length > 50 && !force_split) {
+		if (main.all_creepers.length > main.branch_params.max_creepers && !force_split) {
 			return;
 		}
 		
@@ -324,17 +348,20 @@ var Main = function(init) {
 	};
 };
 
-// adds a static map node
-Main.prototype.add_grid_node = function(init) {
+// initialized everything
+Main.prototype.init = function() {
 	var main = this;
-	
-	// init may have a Pt or an x and y
-	var node = new main.Node(init);
-	
-	main.all_grid_nodes.push(node);
-	main.nodes_id_dict[node.id] = main.all_grid_nodes.length - 1;
-	main.nodes_pos_dict[node.pt.toString()] = main.all_grid_nodes.length - 1;
-	return node;
+	main.id_counter = 0;
+	main.all_creepers = [];
+	main.all_target_nodes = [];
+	main.last_tick = 0;
+	main.start_time = 0;
+	main.anim_running = false;
+	if (main.int) {
+		window.clearInterval(main.int);
+	}
+	main.int = null;
+	main.run();
 };
 
 // same as main.add_node but does not add to main.nodes_pos_dict
@@ -343,8 +370,6 @@ Main.prototype.add_node_for_creeper = function(init) {
 	
 	var node = new main.Node(init);
 	
-	main.all_grid_nodes.push(node);
-	main.nodes_id_dict[node.id] = main.all_grid_nodes.length - 1;
 	return node;
 };
 
@@ -363,7 +388,7 @@ Main.prototype.add_creeper = function(init) {
 	var creep = new main.Creeper(init);
 	
 	main.all_creepers.push(creep);
-	main.creepers_id_dict[creep.id] = main.all_creepers.length - 1;
+	//main.creepers_id_dict[creep.id] = main.all_creepers.length - 1;
 	return creep;
 };
 
@@ -454,7 +479,7 @@ Main.prototype.get_node_distance = function(nd1, nd2) {
 };
 
 // get an array of all nodes sorted by distance from a given node
-// want to keep this around
+// not using this, but let's keep it around
 Main.prototype.get_distance_sorted_nodes = function(nd) {
 	var main = this;
 	
@@ -471,7 +496,7 @@ Main.prototype.get_distance_sorted_nodes = function(nd) {
 		return 0;
 	}
 	
-	return main.all_grid_nodes.sort(dist_compare);
+	return main.all_target_nodes.sort(dist_compare);
 };
 
 Main.prototype.rng = function(n1, n2) {
@@ -486,19 +511,23 @@ Main.prototype.rng = function(n1, n2) {
 Main.prototype.click = function(e) {
 	var main = this;
 	
-	// test
-	var pt1 = new main.Pt({x: 4, y: 4});
-	var pt2 = new main.Pt({x: 5, y: 5});
-	var nd1 = new main.Node({pt: pt1});
-	var nd2 = new main.Node({pt: pt2});
-	
-	var click_pt;
+	var click_pt, one_creep, clear_list;
 	if (main.click_mode) {
 		click_pt = main.click_pos(e);
 
 		if (main.click_mode === "place creeper") {
-			// drop three of them
-			main.add_creeper({x: click_pt.x, y: click_pt.y}).split(true).split(true);
+			
+			// drop three creepers, save one in a var
+			one_creep = main.add_creeper({x: click_pt.x, y: click_pt.y}).split(true).split(true);
+			// now clear out grid nodes from the area we're spawning the creepers 
+			// so they won't die immediately
+			clear_list = one_creep.nd.get_target_nodes_within_distance(50);
+			// clear out those nodes we found
+			clear_list.forEach(function(nd) {
+				nd.is_target = false;
+				nd.draw("#000000");
+			});
+			
 			if (! main.anim_running) {
 				main.start_anim();
 			}
@@ -568,6 +597,7 @@ Main.prototype.tick = function() {
 
 Main.prototype.stop_anim = function() {
 	var main = this; 
+	console.log("animation stopped");
 	
 	window.clearInterval(main.int);
 	main.int = null;
@@ -577,6 +607,7 @@ Main.prototype.stop_anim = function() {
 Main.prototype.start_anim = function() {
 	var main = this;
 	
+	main.start_time = Date.now();
 	main.last_tick = Date.now();
 	var int;
 	main.int = window.setInterval(main.tick.bind(main), main.tick_interval);
@@ -616,16 +647,13 @@ Main.prototype.run = function() {
 	}
 };
 
-window.branches = {	grid_unit: 7
-				   	, wobble: 0.1
-				};
-
 var app;
 window.addEventListener("load", function() { 
 	var elem = document.getElementById("main_canvas");
 	//var grid_unit = 10;
 	//var wobble = 0.1;
+	var branch_params = Branch_Params.get_inst();
 	
-	app = new Main({elem: elem, grid_unit: branches.grid_unit, wobble: branches.wobble, tick_interval: 33});
+	app = new Main({elem: elem, grid_unit: branch_params.grid_unit, wobble: 0, tick_interval: 33});
 });
 
