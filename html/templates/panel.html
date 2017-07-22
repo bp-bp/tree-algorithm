@@ -1,6 +1,17 @@
 <fieldset>
 	<legend>Controls...</legend>
-	<label for = "max_creepers_input">Max Creepers</label><input ng-model = "pn.branch_params.max_creepers" type = "number"/>
-	<button ng-click = "pn.branch_params.main_init()">Start Over</button>
-
+	<div>
+		<label for = "max_creepers_input">Max Creepers</label>
+		<input id = "max_creepers_input" type = "range" min = "0" max = "100" step = "1" ng-model = "pn.branch_params.max_creepers"/>
+		<p>{{pn.branch_params.max_creepers}}</p>
+	</div>
+	<div>
+		<label for = "creep_velocity_input">Creeper Speed</label>
+		<input id = "creep_velocity_input" type = "range" min = "0" max = "300" step = "1" ng-model = "pn.branch_params.creep_velocity"/>
+		<p>{{pn.branch_params.creep_velocity}}</p>
+	</div>
+	<button ng-click = "pn.branch_params.main_init()">Reset</button>
+	<button ng-show = "pn.branch_params.main_paused()" ng-click = "pn.branch_params.main_resume_anim()">Resume</button>
+	<button ng-show = "! pn.branch_params.main_paused()" ng-click = "pn.branch_params.main_pause_anim()">Pause</button>
+	<span>{{pn.branch_params.main_anim_running()}}</span>
 </fieldset>

@@ -7,6 +7,7 @@ var Branch_Params = (function() {
 						, num: 2
 						, grid_unit: 7
 						, max_creepers: 20
+						, creep_velocity: 50
 					};
 		return thing;
 	}
@@ -24,11 +25,15 @@ var Branch_Params = (function() {
 var Main = function(init) {
 	var main = this;
 	
+	// hook up to global branch_params singleton
 	main.branch_params = Branch_Params.get_inst();
-	main.branch_params.main_init = main.init.bind(main);
+	
+	// start initializing stuff
 	main.elem = init.elem || null;
 	main.ctx = main.elem ? main.elem.getContext("2d") : null; 
 	
+	// counter to give a unique client-side id to every node/creeper/whatever. 
+	// didn't wind up using this but I really don't mind having it around
 	main.id_counter = 0;
 	
 	// keep track of creepers
@@ -43,18 +48,29 @@ var Main = function(init) {
 	main.wobble = init.wobble || 0;
 	main.wobble = Math.floor(main.wobble * main.grid_unit);
 	
-	// for animation
+	// for animation lifecycle
 	main.last_tick = 0; // time of last animation tick in milliseconds
 	main.tick_interval = init.tick_interval;  // animation tick interval in milliseconds
-	main.start_time = 0; // time we started the animation -- used to keep creepers from dying for the first few seconds
+	main.start_time = 0; // time we started the animation -- used to keep creepers from dying for the first few seconds -- NOT USING
+	main.finished = true; // if the animation is stopped due to all creepers dying or all targets being eaten (or hasn't started yet)
+	main.paused = false; // used to distinguish between animation being deliberately paused vs paused by blur event
 	main.int = null; // will be reference to animation interval
 	
 	// some ui stuff
 	main.click_mode = "place creeper"; // right now this is the only option
 	main.anim_running = false;
 	
-	// click listener
+	// event handlers
 	main.elem.addEventListener("click", main.click.bind(main));
+	window.addEventListener("blur", main.on_blur.bind(main));
+	window.addEventListener("focus", main.on_focus.bind(main));
+	
+	// put some Main methods and properties in branch_params for use in angular
+	main.branch_params.main_init = main.init.bind(main);
+	main.branch_params.main_resume_anim = main.resume_anim.bind(main);
+	main.branch_params.main_pause_anim = main.pause_anim.bind(main);
+	main.branch_params.main_anim_running = main.get_anim_running.bind(main);
+	main.branch_params.main_paused = main.get_paused.bind(main);
 	
 	//********** object types
 	
@@ -201,11 +217,14 @@ var Main = function(init) {
 			throw new Error("problem with Creeper init, target not provided or wrong type. Init: " + init);
 		}
 		creep.target = init.target || null;;
+		
 		// init.velocity, if provided, should be a number. indicates distance in px per sec
+		/*
 		if ((init.velocity != undefined) && (typeof init.velocity) != "number") {
 			throw new Error("problem with Creeper init, velocity not provided or wrong type. Init: " + init);
 		}
 		creep.init_velocity = init.velocity != undefined ? init.velocity : 50;
+		*/
 		
 		// handle id
 		if (init.id != undefined) {
@@ -267,6 +286,7 @@ var Main = function(init) {
 		// if no targets affected the creeper, die
 		if (accum.x === 0 && accum.y === 0) {
 			creep.dead = true;
+			return;
 		}
 		
 		// now add repulsion from other creepers
@@ -310,7 +330,7 @@ var Main = function(init) {
 		
 		creep.set_last();
 		creep.split();
-		creep.approach(creep.target, creep.init_velocity);
+		creep.approach(creep.target, main.branch_params.creep_velocity);
 	};
 	
 	main.Creeper.prototype.split = function(force_split) {
@@ -322,14 +342,14 @@ var Main = function(init) {
 		}
 		
 		if (force_split) {
-			return main.add_creeper({x: creep.nd.pt.x + .5, y: creep.nd.pt.y + .5, velocity: creep.init_velocity});
+			return main.add_creeper({x: creep.nd.pt.x + .5, y: creep.nd.pt.y + .5, velocity: main.branch_params.creep_velocity});
 		}
 		
 		var r = Math.random();
 		r += .1;
 		r = !!Math.trunc(r);
 		if (r) {
-			return main.add_creeper({x: creep.nd.pt.x + .5, y: creep.nd.pt.y + .5, velocity: creep.init_velocity});
+			return main.add_creeper({x: creep.nd.pt.x + .5, y: creep.nd.pt.y + .5, velocity: main.branch_params.creep_velocity});
 		}
 	};
 	
@@ -362,6 +382,19 @@ Main.prototype.init = function() {
 	}
 	main.int = null;
 	main.run();
+};
+
+// random getters for broadcast through branch_params
+Main.prototype.get_anim_running = function() {
+	var main = this;
+	
+	return main.anim_running;
+};
+
+Main.prototype.get_paused = function() {
+	var main = this;
+	
+	return main.paused;
 };
 
 // same as main.add_node but does not add to main.nodes_pos_dict
@@ -508,6 +541,7 @@ Main.prototype.rng = function(n1, n2) {
 	return n1 + temp;
 };
 
+// event handlers
 Main.prototype.click = function(e) {
 	var main = this;
 	
@@ -529,9 +563,45 @@ Main.prototype.click = function(e) {
 			});
 			
 			if (! main.anim_running) {
+				main.finished = false;
 				main.start_anim();
 			}
 		}
+	}
+};
+
+Main.prototype.on_focus = function() {
+	var main = this;
+	
+	if (! main.anim_running && ! main.finished && ! main.paused) {
+		console.log("resuming on window focus");
+		main.start_anim();
+	}
+};
+
+Main.prototype.on_blur = function() {
+	var main = this;
+	
+	if (main.anim_running) {
+		console.log("pausing on window blur");
+		main.stop_anim();
+	}
+};
+
+Main.prototype.pause_anim = function() {
+	var main = this;
+	
+	main.paused = true;
+	main.stop_anim();
+};
+
+Main.prototype.resume_anim = function() {
+	var main = this;
+	
+	main.paused = false;
+	// let's not do this if we're actually finished
+	if (!main.finished) {
+		main.start_anim();
 	}
 };
 
@@ -553,6 +623,7 @@ Main.prototype.process_creepers = function() {
 	
 	if (! main.all_creepers.length) {
 		console.log("all creepers dead, stopping");
+		main.finished = true;
 		main.stop_anim();
 	}
 	
@@ -574,6 +645,7 @@ Main.prototype.clean_up_targets = function() {
 	
 	if (! main.all_target_nodes.length) {
 		console.log("all targets dead, stopping");
+		main.finished = true;
 		main.stop_anim();
 	}
 };
@@ -607,7 +679,10 @@ Main.prototype.stop_anim = function() {
 Main.prototype.start_anim = function() {
 	var main = this;
 	
-	main.start_time = Date.now();
+	// don't reset start time if we're only paused
+	if (! main.start_time || main.finished) {
+		main.start_time = Date.now();
+	}
 	main.last_tick = Date.now();
 	var int;
 	main.int = window.setInterval(main.tick.bind(main), main.tick_interval);
