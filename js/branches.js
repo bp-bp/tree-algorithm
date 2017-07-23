@@ -580,7 +580,7 @@ Main.prototype.click = function(e) {
 			// clear out those nodes we found
 			clear_list.forEach(function(nd) {
 				nd.is_target = false;
-				nd.draw("#000000");
+				nd.draw("#1c1c1c");
 			});
 			
 			if (! main.anim_running) {
@@ -764,7 +764,7 @@ Main.prototype.hide_targets = function() {
 	var main = this;
 	
 	main.all_target_nodes.forEach(function(t) {
-		t.draw("black");
+		t.draw("1c1c1c");
 	});
 	main.targets_visible = false;
 };
@@ -776,7 +776,7 @@ Main.prototype.run = function() {
 	console.log("running");
 	// clear canvas
 	main.ctx.rect(0, 0, main.elem.width, main.elem.height);
-	main.ctx.fillStyle = "black";
+	main.ctx.fillStyle = "#1c1c1c";
 	main.ctx.fill();
 	
 	main.setup_targets();

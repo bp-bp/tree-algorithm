@@ -7,8 +7,8 @@
 	<script type = "text/javascript" src = "../js/branches.js"></script>
 	<script type = "text/javascript" src = "../js/panel.js"></script>
 	
-	<link rel = "stylesheet" type = "text/css" href = "../css/normalize.css"></link>
-	<link rel = "stylesheet" type = "text/css" href = "../css/branches.css"></link>
+	<link rel = "stylesheet" type = "text/css" href = "../css/normalize.css">
+	<link rel = "stylesheet" type = "text/css" href = "../css/branches.css">
 	
 </head>
 
@@ -16,19 +16,24 @@
 <html>
 <body onload = "app.run()">
 	<header class = "page-head">
-		<h2>Branches</h2> click to start
+		<h2>Branches</h2>
+		
 	</header>
 	<div class = "wrapper">
-		<!--<div class = "column">-->
-			<div class = "panel-container" ng-app = "app">
-				<panel></panel>
-			</div>
-			
-			<div class = "canvas-container">
-				<h5>Click below to start</h5>
-				<canvas id = "main_canvas" class = "main-canvas" width = "600px" height = "600px"></canvas>
-			</div>
-		<!--</div>-->
+		<div class = "inner-wrapper">
+		<p>The animation below began as an implementation of the 'space colonization' algorithm for procedurally generating 
+		tree-like structures. It wound up being a variation on the usual algorithm &mdash; I was more interested in the 
+		results I got after tweaking some of the rules.</p>
+		
+		<div class = "panel-container" ng-app = "panel">
+			<panel></panel>
+		</div>
+
+		<div class = "canvas-container">
+			<h5>Click below to start</h5>
+			<canvas id = "main_canvas" class = "main-canvas" width = "600px" height = "600px"></canvas>
+		</div>
+		</div>
 	</div>
 	
 	

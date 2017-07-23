@@ -1,13 +1,11 @@
-angular.module("app", []);
+angular.module("panel", []);
 
 function panel_ctrl() {
 	this.branch_params = Branch_Params.get_inst();
-	
-	
 }
 
-angular.module("app").controller("panel_ctrl", [panel_ctrl]);
-angular.module("app").component("panel", {
+angular.module("panel").controller("panel_ctrl", [panel_ctrl]);
+angular.module("panel").component("panel", {
 	bindings: {}
 	, controller: [panel_ctrl]
 	, controllerAs: "pn"
