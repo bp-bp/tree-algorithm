@@ -1,3 +1,11 @@
+@font-face {
+	font-family: "laconic-bold";
+	src: url("../font/laconic_bold-webfont.woff2") format("woff2"),
+		url("../font/laconic_bold-webfont.woff") format("woff");
+	font-weight: normal;
+	font-style: normal;
+}
+
 html, body {
 	min-height: 100%;
 	line-height: 1.25;
@@ -20,7 +28,7 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
 	margin: 0;
-	font-weight: bold;
+	font-family: "laconic-bold";
 }
 h1 {font-size: 4rem;}
 h2 {font-size: 3.4rem;}
@@ -28,6 +36,10 @@ h3 {font-size: 2.8rem;}
 h4 {font-size: 2.2rem;}
 h5 {font-size: 1.6rem;}
 h6 {font-size: 1rem;}
+
+canvas {
+	border: 1px solid gray;
+}
 
 /* styling the range sliders */
 /* zeroing out appearance */
@@ -56,7 +68,7 @@ input[type=range]::-ms-track {
 }
 
 /* now actually styling, first the slider */
-/* Special styling for WebKit/Blink */
+/* chrome */
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   border: 1px solid #000000;
@@ -65,10 +77,10 @@ input[type=range]::-webkit-slider-thumb {
   border-radius: 3px;
   background: green;
   cursor: pointer;
-  margin-top: -14px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+  margin-top: -7px; /* chrome only */
 }
 
-/* All the same stuff for Firefox */
+/* same for irefox */
 input[type=range]::-moz-range-thumb {
   border: 1px solid #000000;
   height: 20px;
@@ -78,7 +90,7 @@ input[type=range]::-moz-range-thumb {
   cursor: pointer;
 }
 
-/* All the same stuff for IE */
+/* same for IE */
 input[type=range]::-ms-thumb {
   border: 1px solid #000000;
   height: 20px;
@@ -89,6 +101,7 @@ input[type=range]::-ms-thumb {
 }
 
 /* then the track */
+/* first chrome */
 input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
   height: 8.4px;
@@ -97,11 +110,11 @@ input[type=range]::-webkit-slider-runnable-track {
   border-radius: 1.3px;
   border: 0.2px solid #010101;
 }
-
+/*when focused */
 input[type=range]:focus::-webkit-slider-runnable-track {
   background: #367ebd;
 }
-
+/* now firefox */
 input[type=range]::-moz-range-track {
   width: 100%;
   height: 8.4px;
@@ -110,7 +123,7 @@ input[type=range]::-moz-range-track {
   border-radius: 1.3px;
   border: 0.2px solid #010101;
 }
-
+/* now ie */
 input[type=range]::-ms-track {
   width: 100%;
   height: 8.4px;
@@ -147,16 +160,55 @@ input[type=range]:focus::-ms-fill-upper {
 	margin-right: 3rem;
 }
 
+/* test */
+/*
 .wrapper {
-	/*margin: 0 auto;*/
+	border: 2px dashed white;
+}
+.panel-container {
+	border: 2px solid cyan;
+}
+.canvas-container {
+	border: 2px solid green;
+}
+canvas {
+	border: 2px solid purple;
+}
+*/
+
+/* actual styles */
+.wrapper {
+	text-align: center;
+}
+.panel-container, .canvas-container {
+	width: 616px;
+	display: inline-block;
+	vertical-align: top;
+}
+.panel-container {
+}
+.canvas-container {
+	text-align: center;
+}
+
+@media(min-width: 616px) {
+	.panel-container {
+		/*float: right;*/
+	}
+	.canvas-container {
+		/*float: left;*/
+	}
+}
+
+/*
+
+.wrapper {
 	text-align: center;
 	background-color: black;
 }
 .column {
 	width: 616px;
 	display: inline-block;
-	margin: 0;
-	padding: 0 5px;
 }
 .main-canvas {
 	border: 1px solid gray;
@@ -164,8 +216,20 @@ input[type=range]:focus::-ms-fill-upper {
 .panel-container {
 }
 @media(min-width: 610px) {
+	.column {
+		width: initial;
+		padding: 5px;
+	}
+	.panel-container {
+		float: left;
+		min-height: inherit;
+	}
+	.canvas-container {
+		float: right;
+	}
 	
 }
+*/
 
 /* utilities */
 .spacer-top {

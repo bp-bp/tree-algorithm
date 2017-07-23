@@ -1,6 +1,7 @@
+<h5>Controls</h5>
 <fieldset>
-	<legend>Controls</legend>
-	<div>
+	<!--<legend>Controls</legend>-->
+	<div title = "The maximum number of branches that can be actively growing at any time" >
 		<label for = "max_creepers_input">Max Creepers</label>
 		<input id = "max_creepers_input" type = "range" min = "0" max = "100" step = "1" ng-model = "pn.branch_params.max_creepers"/>
 		<p>{{pn.branch_params.max_creepers}}</p>
@@ -21,6 +22,5 @@
 	<button ng-show = "! pn.branch_params.main_targets_visible()" ng-click = "pn.branch_params.main_draw_targets()">Show Attractors</button>
 	<button ng-show = "pn.branch_params.main_targets_visible()" ng-click = "pn.branch_params.main_hide_targets()">Hide Attractors</button>
 
-	<h6 class = "spacer-top">click below to start</h6>
 </fieldset>
 
