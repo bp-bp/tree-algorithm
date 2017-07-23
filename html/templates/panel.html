@@ -1,5 +1,5 @@
 <fieldset>
-	<legend>Controls...</legend>
+	<legend>Controls</legend>
 	<div>
 		<label for = "max_creepers_input">Max Creepers</label>
 		<input id = "max_creepers_input" type = "range" min = "0" max = "100" step = "1" ng-model = "pn.branch_params.max_creepers"/>
@@ -7,11 +7,20 @@
 	</div>
 	<div>
 		<label for = "creep_velocity_input">Creeper Speed</label>
-		<input id = "creep_velocity_input" type = "range" min = "0" max = "300" step = "1" ng-model = "pn.branch_params.creep_velocity"/>
+		<input id = "creep_velocity_input" type = "range" min = "0" max = "150" step = "1" ng-model = "pn.branch_params.creep_velocity"/>
 		<p>{{pn.branch_params.creep_velocity}}</p>
+	</div>
+	<div>
+		<label for = "attractor_frequency_input">Attractor Frequency -- requires reset</label>
+		<input id = "attractor_frequency_input" type = "range" min = "0.0" max = "1.0" step = "0.05" ng-model = "pn.branch_params.attractor_frequency"/>
+		<p>{{pn.branch_params.attractor_frequency}}</p>
 	</div>
 	<button ng-click = "pn.branch_params.main_init()">Reset</button>
 	<button ng-show = "pn.branch_params.main_paused()" ng-click = "pn.branch_params.main_resume_anim()">Resume</button>
 	<button ng-show = "! pn.branch_params.main_paused()" ng-click = "pn.branch_params.main_pause_anim()">Pause</button>
-	<span>{{pn.branch_params.main_anim_running()}}</span>
+	<button ng-show = "! pn.branch_params.main_targets_visible()" ng-click = "pn.branch_params.main_draw_targets()">Show Attractors</button>
+	<button ng-show = "pn.branch_params.main_targets_visible()" ng-click = "pn.branch_params.main_hide_targets()">Hide Attractors</button>
+
+	<h6 class = "spacer-top">click below to start</h6>
 </fieldset>
+

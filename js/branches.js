@@ -6,6 +6,7 @@ var Branch_Params = (function() {
 		var thing = {	what: "it is me"
 						, num: 2
 						, grid_unit: 7
+						, attractor_frequency: 0.7
 						, max_creepers: 20
 						, creep_velocity: 50
 					};
@@ -59,6 +60,7 @@ var Main = function(init) {
 	// some ui stuff
 	main.click_mode = "place creeper"; // right now this is the only option
 	main.anim_running = false;
+	main.targets_visible = false;
 	
 	// event handlers
 	main.elem.addEventListener("click", main.click.bind(main));
@@ -71,6 +73,12 @@ var Main = function(init) {
 	main.branch_params.main_pause_anim = main.pause_anim.bind(main);
 	main.branch_params.main_anim_running = main.get_anim_running.bind(main);
 	main.branch_params.main_paused = main.get_paused.bind(main);
+	main.branch_params.main_draw_targets = main.draw_targets.bind(main);
+	main.branch_params.main_hide_targets = main.hide_targets.bind(main);
+	main.branch_params.main_targets_visible = main.get_targets_visible.bind(main);
+	
+	// test
+	main.frame_times = [];
 	
 	//********** object types
 	
@@ -397,6 +405,12 @@ Main.prototype.get_paused = function() {
 	return main.paused;
 };
 
+Main.prototype.get_targets_visible = function() {
+	var main = this;
+	
+	return main.targets_visible;
+};
+
 // same as main.add_node but does not add to main.nodes_pos_dict
 Main.prototype.add_node_for_creeper = function(init) {
 	var main = this;
@@ -410,6 +424,7 @@ Main.prototype.add_target_node = function(init) {
 	var main = this;
 	
 	var node = new main.Node(init);
+	node.is_target = true;
 	
 	main.all_target_nodes.push(node);
 	return node;
@@ -433,11 +448,17 @@ Main.prototype.draw_line = function(pt1, pt2, color) {
 		throw new Error("error in Main.draw_line -- no ctx available");
 	}
 	
+	main.ctx.shadowColor = color;
+	main.ctx.shadowBlur = 10;
+	
 	main.ctx.strokeStyle = color;
 	main.ctx.beginPath();
 	main.ctx.moveTo(pt1.x , pt1.y);
 	main.ctx.lineTo(pt2.x, pt2.y);
 	main.ctx.stroke();
+	
+	main.ctx.shadowColor = "";
+	main.ctx.shadowBlur = 0;
 };
 
 // draws a small rect on a point
@@ -659,6 +680,7 @@ Main.prototype.tick = function() {
 		main.process_creepers();
 
 		// finally
+		main.frame_times.push(Date.now() - main.last_tick);
 		main.last_tick = Date.now();
 	}
 	catch(err) {
@@ -667,6 +689,14 @@ Main.prototype.tick = function() {
 	}
 };
 
+function mean(arr) {
+	function sum_up(tot, n) {
+		return tot + n;
+	}
+	var total = arr.reduce(sum_up);
+	console.log("avg is: ", (total / arr.length));
+}
+
 Main.prototype.stop_anim = function() {
 	var main = this; 
 	console.log("animation stopped");
@@ -674,6 +704,9 @@ Main.prototype.stop_anim = function() {
 	window.clearInterval(main.int);
 	main.int = null;
 	main.anim_running = false;
+	
+	mean(main.frame_times);
+	//console.log("frame_times: ", main.frame_times);
 };
 
 Main.prototype.start_anim = function() {
@@ -692,7 +725,49 @@ Main.prototype.start_anim = function() {
 	}
 };
 
+Main.prototype.setup_targets = function() {
+	var main = this; 
+	
+	// setup grid
+	var pos_x = 0, pos_y = 0, nd;
+	var grid_count_x = Math.floor(main.elem.width / main.grid_unit);
+	var grid_count_y = Math.floor(main.elem.height / main.grid_unit);
+	var x, y;
+	for (x = 0; x < grid_count_x; x++) {
+		for (y = 0; y < grid_count_y; y++) {
+			pos_x = (x * main.grid_unit);
+			pos_y = (y * main.grid_unit);
+			//if (!!Math.round(Math.random())) {
+			if (!! Math.trunc( (Math.random() + main.branch_params.attractor_frequency) )) {
+				nd = main.add_target_node({x: pos_x, y: pos_y});
+				//nd.is_target = true
+				//nd.draw("#afafaf");
+			}
+		}
+	}
+	
+	if (main.targets_visible) {
+		main.draw_targets();
+	}
+};
 
+Main.prototype.draw_targets = function() {
+	var main = this;
+	
+	main.all_target_nodes.forEach(function(t) {
+		t.draw("#afafaf");
+	});
+	main.targets_visible = true;
+};
+
+Main.prototype.hide_targets = function() {
+	var main = this;
+	
+	main.all_target_nodes.forEach(function(t) {
+		t.draw("black");
+	});
+	main.targets_visible = false;
+};
 
 // do things
 Main.prototype.run = function() {
@@ -704,22 +779,7 @@ Main.prototype.run = function() {
 	main.ctx.fillStyle = "black";
 	main.ctx.fill();
 	
-	// setup grid
-	var pos_x = 0, pos_y = 0, nd;
-	var grid_count_x = Math.floor(main.elem.width / main.grid_unit);
-	var grid_count_y = Math.floor(main.elem.height / main.grid_unit);
-	var x, y;
-	for (x = 0; x < grid_count_x; x++) {
-		for (y = 0; y < grid_count_y; y++) {
-			pos_x = (x * main.grid_unit);
-			pos_y = (y * main.grid_unit);
-			if (!!Math.round(Math.random())) {
-				nd = main.add_target_node({x: pos_x, y: pos_y});
-				nd.is_target = true
-				nd.draw("#afafaf");
-			}
-		}
-	}
+	main.setup_targets();
 };
 
 var app;
