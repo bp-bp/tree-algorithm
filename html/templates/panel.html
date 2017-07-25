@@ -8,13 +8,19 @@
 	</div>
 	<div>
 		<label for = "creep_velocity_input">Grow Speed</label>
-		<input id = "creep_velocity_input" type = "range" min = "0" max = "150" step = "1" ng-model = "pn.branch_params.creep_velocity"/>
+		<input id = "creep_velocity_input" type = "range" min = "0" max = "75" step = "1" ng-model = "pn.branch_params.creep_velocity"/>
 		<p>{{pn.branch_params.creep_velocity}}</p>
 	</div>
-	<div>
+	<div title = "Determines how closely spaced the attractors are. This cannot be changed once the animation has begun, you must click 'Reset' for this to take effect. Click 'Show Attractors' to see all the attractor nodes illuminated.">
 		<label for = "attractor_frequency_input">Attractor Frequency -- requires reset</label>
 		<input id = "attractor_frequency_input" type = "range" min = "0.0" max = "1.0" step = "0.05" ng-model = "pn.branch_params.attractor_frequency"/>
 		<p>{{pn.branch_params.attractor_frequency}}</p>
+	</div>
+	<div class = "spacer-bottom">
+		Background Color
+		<input type = "color" ng-model = "pn.branch_params.background_color"/>
+		Branch Color
+		<input type = "color" ng-model = "pn.branch_params.creeper_color"/>
 	</div>
 	<button ng-click = "pn.branch_params.main_init()">Reset</button>
 	<button ng-show = "pn.branch_params.main_paused()" ng-click = "pn.branch_params.main_resume_anim()">Resume</button>

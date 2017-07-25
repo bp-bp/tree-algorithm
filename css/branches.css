@@ -183,22 +183,39 @@ canvas {
 .inner-wrapper {
 	display: inline-block;
 }
-.panel-container, .canvas-container {
+.description {
+	margin: 0 12rem 2rem 12rem;
+}
+.panel-container, .canvas-container-outer {
 	width: 600px;
 	display: inline-block;
 	vertical-align: top;
 }
 .panel-container {
 }
-.canvas-container {
+.canvas-container-outer {
 	text-align: center;
+}
+.canvas-container-inner {
+	position: relative;
+}
+#creep_canvas {
+	position: absolute;
+	left: 0;
+	top: 0;
+	z-index: 2;
+}
+#target_canvas {
+	position: absolute;
+	left: 0;
+	top: 0;
 }
 
 @media(min-width: 600px) {
 	.panel-container {
 		/*float: right;*/
 	}
-	.canvas-container {
+	.canvas-container-outer {
 		/*float: left;*/
 	}
 }
@@ -237,6 +254,9 @@ canvas {
 /* utilities */
 .spacer-top {
 	margin-top: 1rem;
+}
+.spacer-bottom {
+	margin-bottom: 1rem;
 }
 .ib {
 	display: inline-block;

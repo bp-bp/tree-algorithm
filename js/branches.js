@@ -6,9 +6,11 @@ var Branch_Params = (function() {
 		var thing = {	what: "it is me"
 						, num: 2
 						, grid_unit: 7
-						, attractor_frequency: 0.7
+						, attractor_frequency: 0.3
 						, max_creepers: 20
 						, creep_velocity: 50
+						, background_color: "#1c1c1c"
+						, creeper_color: "#33a8ff"
 					};
 		return thing;
 	}
@@ -30,8 +32,10 @@ var Main = function(init) {
 	main.branch_params = Branch_Params.get_inst();
 	
 	// start initializing stuff
-	main.elem = init.elem || null;
-	main.ctx = main.elem ? main.elem.getContext("2d") : null; 
+	main.creep_elem = init.creep_elem || null;
+	main.creep_ctx = main.creep_elem ? main.creep_elem.getContext("2d") : null; 
+	main.target_elem = init.target_elem || null;
+	main.target_ctx = main.target_elem ? main.target_elem.getContext("2d") : null;
 	
 	// counter to give a unique client-side id to every node/creeper/whatever. 
 	// didn't wind up using this but I really don't mind having it around
@@ -63,7 +67,7 @@ var Main = function(init) {
 	main.targets_visible = false;
 	
 	// event handlers
-	main.elem.addEventListener("click", main.click.bind(main));
+	main.creep_elem.addEventListener("click", main.click.bind(main));
 	window.addEventListener("blur", main.on_blur.bind(main));
 	window.addEventListener("focus", main.on_focus.bind(main));
 	
@@ -160,10 +164,10 @@ var Main = function(init) {
 		}
 	};
 	
-	main.Node.prototype.draw = function(color) {
+	main.Node.prototype.draw = function(ctx, color) {
 		var node = this;
 		
-		main.draw_node(node, color);
+		main.draw_node(ctx, node, color);
 	};
 	
 	// returns array of all grid nodes within a given distance of this node
@@ -243,7 +247,8 @@ var Main = function(init) {
 			creep.id = main.id_counter;
 		}
 		
-		creep.color = init.color || "#004377";
+		//creep.color = init.color || "#004377";
+		creep.color = main.branch_params.creeper_color;
 		creep.dead = false;
 	};
 	
@@ -277,7 +282,7 @@ var Main = function(init) {
 			if (dist <= 3.0) {
 				creep.dead = true;
 				t.is_target = false;
-				t.draw("black");
+				t.draw(main.target_ctx, "#1c1c1c");
 				return;
 			}
 			// now check to see if this target is too far away to affect the creeper
@@ -372,7 +377,7 @@ var Main = function(init) {
 	main.Creeper.prototype.draw = function() {
 		var creep = this;
 		
-		main.draw_connect_nodes(creep.last_loc, creep.nd, creep.color);
+		main.draw_connect_nodes(main.creep_ctx, creep.last_loc, creep.nd, creep.color);
 	};
 };
 
@@ -441,46 +446,46 @@ Main.prototype.add_creeper = function(init) {
 };
 
 // draws a line connecting two points
-Main.prototype.draw_line = function(pt1, pt2, color) {
+Main.prototype.draw_line = function(ctx, pt1, pt2, color) {
 	var main = this;
 	
-	if (! main.ctx) {
-		throw new Error("error in Main.draw_line -- no ctx available");
+	if (! ctx) {
+		throw new Error("error in Main.draw_line -- no creep_ctx available");
 	}
 	
-	main.ctx.shadowColor = color;
-	main.ctx.shadowBlur = 10;
+	ctx.shadowColor = color;
+	ctx.shadowBlur = 10;
 	
-	main.ctx.strokeStyle = color;
-	main.ctx.beginPath();
-	main.ctx.moveTo(pt1.x , pt1.y);
-	main.ctx.lineTo(pt2.x, pt2.y);
-	main.ctx.stroke();
+	ctx.strokeStyle = color;
+	ctx.beginPath();
+	ctx.moveTo(pt1.x , pt1.y);
+	ctx.lineTo(pt2.x, pt2.y);
+	ctx.stroke();
 	
-	main.ctx.shadowColor = "";
-	main.ctx.shadowBlur = 0;
+	ctx.shadowColor = "";
+	ctx.shadowBlur = 0;
 };
 
 // draws a small rect on a point
-Main.prototype.draw_point = function(pt, color) {
+Main.prototype.draw_point = function(ctx, pt, color) {
 	var main = this;
 	
-	main.ctx.fillStyle = color;
-	main.ctx.fillRect(pt.x, pt.y, 2, 2);
+	ctx.fillStyle = color;
+	ctx.fillRect(pt.x, pt.y, 2, 2);
 };
 
 // draws a line connecting two nodes -- calls Main.draw_line
-Main.prototype.draw_connect_nodes = function(nd1, nd2, color) {
+Main.prototype.draw_connect_nodes = function(ctx, nd1, nd2, color) {
 	var main = this;
 	
-	main.draw_line(nd1.pt, nd2.pt, color);
+	main.draw_line(ctx, nd1.pt, nd2.pt, color);
 };
 
 // draws a small rect on a node's location -- calls Main.draw_point
-Main.prototype.draw_node = function(nd, color) {
+Main.prototype.draw_node = function(ctx, nd, color) {
 	var main = this;
 	
-	main.draw_point(nd.pt, color);
+	main.draw_point(ctx, nd.pt, color);
 };
 
 // get one dimension of random wobble
@@ -580,7 +585,7 @@ Main.prototype.click = function(e) {
 			// clear out those nodes we found
 			clear_list.forEach(function(nd) {
 				nd.is_target = false;
-				nd.draw("#1c1c1c");
+				nd.draw(main.target_ctx, "#1c1c1c");
 			});
 			
 			if (! main.anim_running) {
@@ -629,9 +634,9 @@ Main.prototype.resume_anim = function() {
 Main.prototype.click_pos = function(e) {
 	var main = this;
 	
-	var rect = main.elem.getBoundingClientRect();
-	var click_pt = new main.Pt({	x: Math.round((e.clientX - rect.left) / (rect.right - rect.left) * main.elem.width)
-									, y: Math.round((e.clientY - rect.top) / (rect.bottom - rect.top) * main.elem.height) });
+	var rect = main.creep_elem.getBoundingClientRect();
+	var click_pt = new main.Pt({	x: Math.round((e.clientX - rect.left) / (rect.right - rect.left) * main.creep_elem.width)
+									, y: Math.round((e.clientY - rect.top) / (rect.bottom - rect.top) * main.creep_elem.height) });
 	return click_pt;
 };
 
@@ -730,8 +735,8 @@ Main.prototype.setup_targets = function() {
 	
 	// setup grid
 	var pos_x = 0, pos_y = 0, nd;
-	var grid_count_x = Math.floor(main.elem.width / main.grid_unit);
-	var grid_count_y = Math.floor(main.elem.height / main.grid_unit);
+	var grid_count_x = Math.floor(main.creep_elem.width / main.grid_unit);
+	var grid_count_y = Math.floor(main.creep_elem.height / main.grid_unit);
 	var x, y;
 	for (x = 0; x < grid_count_x; x++) {
 		for (y = 0; y < grid_count_y; y++) {
@@ -755,7 +760,7 @@ Main.prototype.draw_targets = function() {
 	var main = this;
 	
 	main.all_target_nodes.forEach(function(t) {
-		t.draw("#afafaf");
+		t.draw(main.target_ctx, "#afafaf");
 	});
 	main.targets_visible = true;
 };
@@ -764,7 +769,7 @@ Main.prototype.hide_targets = function() {
 	var main = this;
 	
 	main.all_target_nodes.forEach(function(t) {
-		t.draw("1c1c1c");
+		t.draw(main.target_ctx, "1c1c1c");
 	});
 	main.targets_visible = false;
 };
@@ -775,20 +780,21 @@ Main.prototype.run = function() {
 	
 	console.log("running");
 	// clear canvas
-	main.ctx.rect(0, 0, main.elem.width, main.elem.height);
-	main.ctx.fillStyle = "#1c1c1c";
-	main.ctx.fill();
+	main.creep_ctx.rect(0, 0, main.creep_elem.width, main.creep_elem.height);
+	main.creep_ctx.fillStyle = "transparent";
+	main.creep_ctx.fill();
 	
 	main.setup_targets();
 };
 
 var app;
 window.addEventListener("load", function() { 
-	var elem = document.getElementById("main_canvas");
+	var creep_elem = document.getElementById("creep_canvas");
+	var target_elem = document.getElementById("target_canvas");
 	//var grid_unit = 10;
 	//var wobble = 0.1;
 	var branch_params = Branch_Params.get_inst();
 	
-	app = new Main({elem: elem, grid_unit: branch_params.grid_unit, wobble: 0, tick_interval: 33});
+	app = new Main({creep_elem: creep_elem, target_elem: target_elem, grid_unit: branch_params.grid_unit, wobble: 0, tick_interval: 33});
 });
 
