@@ -282,7 +282,7 @@ var Main = function(init) {
 			if (dist <= 3.0) {
 				creep.dead = true;
 				t.is_target = false;
-				t.draw(main.target_ctx, "#1c1c1c");
+				t.draw(main.target_ctx, main.branch_params.background_color);
 				return;
 			}
 			// now check to see if this target is too far away to affect the creeper
@@ -349,11 +349,11 @@ var Main = function(init) {
 	main.Creeper.prototype.split = function(force_split) {
 		var creep = this;
 		
-		// maximum of 50 creepers
+		// don't exceed maximum creepers
 		if (main.all_creepers.length > main.branch_params.max_creepers && !force_split) {
 			return;
 		}
-		
+		// ...unless force_split was passed
 		if (force_split) {
 			return main.add_creeper({x: creep.nd.pt.x + .5, y: creep.nd.pt.y + .5, velocity: main.branch_params.creep_velocity});
 		}
@@ -441,7 +441,6 @@ Main.prototype.add_creeper = function(init) {
 	var creep = new main.Creeper(init);
 	
 	main.all_creepers.push(creep);
-	//main.creepers_id_dict[creep.id] = main.all_creepers.length - 1;
 	return creep;
 };
 
@@ -576,6 +575,7 @@ Main.prototype.click = function(e) {
 		click_pt = main.click_pos(e);
 
 		if (main.click_mode === "place creeper") {
+			console.log("main.all_creepers: ", main.all_creepers);
 			
 			// drop three creepers, save one in a var
 			one_creep = main.add_creeper({x: click_pt.x, y: click_pt.y}).split(true).split(true);
@@ -585,7 +585,7 @@ Main.prototype.click = function(e) {
 			// clear out those nodes we found
 			clear_list.forEach(function(nd) {
 				nd.is_target = false;
-				nd.draw(main.target_ctx, "#1c1c1c");
+				nd.draw(main.target_ctx, main.branch_params.background_color);
 			});
 			
 			if (! main.anim_running) {
@@ -710,7 +710,9 @@ Main.prototype.stop_anim = function() {
 	main.int = null;
 	main.anim_running = false;
 	
-	mean(main.frame_times);
+	if (main.frame_times) {
+		mean(main.frame_times);
+	}
 	//console.log("frame_times: ", main.frame_times);
 };
 
@@ -769,7 +771,7 @@ Main.prototype.hide_targets = function() {
 	var main = this;
 	
 	main.all_target_nodes.forEach(function(t) {
-		t.draw(main.target_ctx, "1c1c1c");
+		t.draw(main.target_ctx, main.branch_params.background_color);
 	});
 	main.targets_visible = false;
 };
@@ -779,7 +781,12 @@ Main.prototype.run = function() {
 	var main = this;
 	
 	console.log("running");
-	// clear canvas
+	// clear canvases
+	main.target_ctx.clearRect(0, 0, main.target_elem.width, main.target_elem.height);
+	main.target_ctx.rect(0, 0, main.target_elem.width, main.target_elem.height);
+	main.target_ctx.fillStyle = main.branch_params.background_color;
+	main.target_ctx.fill();
+	main.creep_ctx.clearRect(0, 0, main.creep_elem.width, main.creep_elem.height);
 	main.creep_ctx.rect(0, 0, main.creep_elem.width, main.creep_elem.height);
 	main.creep_ctx.fillStyle = "transparent";
 	main.creep_ctx.fill();
@@ -787,14 +794,35 @@ Main.prototype.run = function() {
 	main.setup_targets();
 };
 
-var app;
-window.addEventListener("load", function() { 
+//console.log("window details");
+//console.log(window.innerWidth);
+//console.log(window.innerHeight);
+
+function set_dimensions() {
 	var creep_elem = document.getElementById("creep_canvas");
 	var target_elem = document.getElementById("target_canvas");
-	//var grid_unit = 10;
-	//var wobble = 0.1;
+	
+	var ww = window.innerWidth;
+	if (ww < 650) {
+		creep_elem.width = (ww);
+		target_elem.width = (ww);
+	}
+	
 	var branch_params = Branch_Params.get_inst();
 	
 	app = new Main({creep_elem: creep_elem, target_elem: target_elem, grid_unit: branch_params.grid_unit, wobble: 0, tick_interval: 33});
+};
+
+var app;
+window.addEventListener("load", function() { 
+	//var creep_elem = document.getElementById("creep_canvas");
+	//var target_elem = document.getElementById("target_canvas");
+	
+	//window.setTimeout(set_dimensions, 5000);
+	set_dimensions();
+	
+	//var branch_params = Branch_Params.get_inst();
+	
+	//app = new Main({creep_elem: creep_elem, target_elem: target_elem, grid_unit: branch_params.grid_unit, wobble: 0, tick_interval: 33});
 });
 
