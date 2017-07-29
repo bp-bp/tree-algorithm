@@ -6,9 +6,18 @@
 	font-style: normal;
 }
 
+@font-face {
+	font-family: "rubik-regular";
+	src: url("../font/rubik-regular-webfont.woff2") format("woff2"),
+		url("../font/rubik-regular-webfont.woff") format("woff");
+	font-weight: normal;
+	font-style: normal;
+}
+
 html, body {
 	min-height: 100%;
-	line-height: 1.25;
+	line-height: 1.5;
+	font-size: 16px;
 	box-sizing: border-box;
 	font-family: Arial, Helvetica, sans-serif;
 }
@@ -24,6 +33,10 @@ body {
 	color: white;
 	background-color: #1c1c1c;
 	margin: 0;
+	font-family: "rubik-regular";
+}
+*{
+	margin: 0;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -37,9 +50,35 @@ h4 {font-size: 2.2rem;}
 h5 {font-size: 1.6rem;}
 h6 {font-size: 1rem;}
 
-canvas, fieldset {
+button {
+	padding: 0.3rem 0.25rem;
+	background-color: transparent;
+	border: 1px solid lightgray;
+	border-radius: 3px;
+	text-transform: uppercase;
+	color: #adadad;
+	font-size: 1.2rem;
+	font-family: "laconic-bold";
+	letter-spacing: .1rem;
+	transition: letter-spacing .15s;
+}
+button:hover {
+	color: #d3d3d3;
+	letter-spacing: 0.3rem;
+}
+
+fieldset, .canvas-container-inner {
 	border-top: 1px solid gray;
 	border-bottom: 1px solid gray;
+	border-right: none;
+	border-left: none;
+}
+
+input[type=color] {
+	padding: 0;
+	background-color: gray;
+	border: none;
+	border-radius: 3px;
 }
 
 /* styling the range sliders */
@@ -61,7 +100,6 @@ input[type=range]:focus {
 input[type=range]::-ms-track {
   width: 100%;
   cursor: pointer;
-
   /* Hides the slider so custom styles can be added */
   background: transparent; 
   border-color: transparent;
@@ -152,25 +190,75 @@ input[type=range]:focus::-ms-fill-upper {
 }
 /* range sliders complete */
 
+
+/* experiment */
+
+/*
+@keyframes slideDown {
+	0% {
+		transform: translateX(-100%);
+		
+	}
+	100% {
+		transform: translateX(0);
+	}
+}
+
+.wrapper {
+	animation: 1s ease-out 0s 1 slideDown;
+	overflow-y: hidden;
+	z-index: -1;
+}
+*/
+/* end experiment */
+
+
 .page-head {
-	background-color: #1c1c1c;
+	/*background-color: #1c1c1c;*/
+	background-color: black;
+	color: white;
 	padding: 0.5rem;
+	border-bottom: 1px solid gray;
+	z-index: 20;
 }
 .page-head h2 {
 	display: inline-block;
+}
+
+.test {
+	width: 10rem;
+	border: 1px dotted red;
 }
 
 /* actual styles */
 .wrapper {
 	text-align: center;
 }
-
+.inner-wrapper {
+	text-align: center;
+}
+.description {
+	margin: 1rem 0;
+}
 
 .panel-container {
+	
+}
+.panel-container hr {
+	width: 35%;
+	min-width: 8rem;
+	text-align: center;
+	margin: .5rem auto;
+	border: none;
+	color: #5e5e5e;
+	background-color: #5e5e5e;
+	height: 1px;
 }
 .canvas-container-outer {
 	text-align: center;
 }
+
+
 .canvas-container-inner {
 	position: relative;
 }
@@ -187,23 +275,29 @@ input[type=range]:focus::-ms-fill-upper {
 }
 
 @media(min-width: 650px) {
-	.panel-container, .canvas-container-outer {
+	.panel-container,.canvas-container-outer {
 		display: inline-block;
 		vertical-align: top;
 	}
 	.panel-container {
-	}
-	.canvas-container-outer {
+		width: 40.625rem;
 	}
 	.inner-wrapper {
 		display: inline-block;
 	}
 	.description {
-		margin: 0 12rem 2rem 12rem;
+		max-width: 41rem;
+		display: inline-block;
 	}
-	fieldset, canvas {
+	fieldset, .canvas-container-inner {
 		border-right: 1px solid gray;
 		border-left: 1px solid gray;
+	}
+}
+
+@media(min-width: 1328px) {
+	.description {
+		max-width: 82rem;
 	}
 }
 

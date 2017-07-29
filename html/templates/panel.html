@@ -6,16 +6,19 @@
 		<input id = "max_creepers_input" type = "range" min = "0" max = "100" step = "1" ng-model = "pn.branch_params.max_creepers"/>
 		<p>{{pn.branch_params.max_creepers}}</p>
 	</div>
-	<div>
+	<hr>
+	<div title = "The speed at which the branches will grow and spread">
 		<label for = "creep_velocity_input">Grow Speed</label>
 		<input id = "creep_velocity_input" type = "range" min = "0" max = "75" step = "1" ng-model = "pn.branch_params.creep_velocity"/>
 		<p>{{pn.branch_params.creep_velocity}}</p>
 	</div>
+	<hr>
 	<div title = "Determines how closely spaced the attractors are. This cannot be changed once the animation has begun, you must click 'Reset' for this to take effect. Click 'Show Attractors' to see all the attractor nodes illuminated.">
 		<label for = "attractor_frequency_input">Attractor Frequency -- requires reset</label>
 		<input id = "attractor_frequency_input" type = "range" min = "0.0" max = "1.0" step = "0.05" ng-model = "pn.branch_params.attractor_frequency"/>
 		<p>{{pn.branch_params.attractor_frequency}}</p>
 	</div>
+	<hr>
 	<div class = "spacer-bottom">
 		Background Color
 		<input type = "color" ng-model = "pn.branch_params.background_color"/>

@@ -893,10 +893,20 @@ function set_dimensions() {
 	var target_elem = document.getElementById("target_canvas");
 	
 	var ww = window.innerWidth;
-	if (ww < 652) {
-		creep_elem.width = (ww - 2);
-		target_elem.width = (ww - 2);
+	console.log("window.innerWidth: ", ww);
+	var client_width = document.body.clientWidth;
+	console.log("document.body.scrollWidth: ", client_width);
+	var client_height = document.body.clientHeight;
+	if (client_width < 650) {
+		creep_elem.width = (client_width - 2);
+		target_elem.width = (client_width - 2);
 	}
+	if (client_height < 650) {
+		creep_elem.height = (Math.floor(client_height * 0.8));
+		target_elem.height = (Math.floor(client_height * 0.8));
+	}
+	
+	console.log("creep_elem.width: ", creep_elem.width);
 	
 	var branch_params = Branch_Params.get_inst();
 	

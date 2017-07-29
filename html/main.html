@@ -18,27 +18,27 @@
 <body onload = "app.run()">
 	<header class = "page-head">
 		<h2>Branches</h2>
-		
 	</header>
 	<div class = "wrapper">
-		<div class = "inner-wrapper">
-		<p class = "description">The animation below began as an implementation of the 'space colonization' algorithm for procedurally generating 
-		tree-like structures. It wound up being a variation on the usual algorithm &mdash; I was more interested in the 
-		results I got after tweaking some of the rules.</p>
-		
-		<div class = "panel-container" ng-app = "panel">
-			<panel></panel>
-		</div>
+		<!--<div class = "inner-wrapper">-->
+			<p class = "description">The animation below uses a variation on the 'space colonization' algorithm for procedurally generating 
+			tree-like structures. Click within the canvas to begin the animation, and play with the controls to see how modifying the parameters
+			changes the outcome. Clicking the 'Show Attractors' button will illuminate the field of attraction nodes that are directing the 
+			growth direction of the branches.</p>
 
-		<div class = "canvas-container-outer">
-			<h5>Click below to start</h5>
-			<div class = "canvas-container-inner">
-				<!-- one canvas for drawing branches, one for drawing attractors -->
-				<canvas id = "creep_canvas" class = "main-canvas" width = "600px" height = "600px"></canvas>
-				<canvas id = "target_canvas" class = "main-canvas" width = "600px" height = "600px"></canvas>
+			<div class = "panel-container" ng-app = "panel">
+				<panel></panel>
 			</div>
-		</div>
-		</div>
+
+			<div class = "canvas-container-outer">
+				<h5>Click below to start</h5>
+				<div class = "canvas-container-inner">
+					<!-- one canvas for drawing branches, one for drawing attractors -->
+					<canvas id = "creep_canvas" class = "main-canvas" width = "650px" height = "650px"></canvas>
+					<canvas id = "target_canvas" class = "main-canvas" width = "650px" height = "650px"></canvas>
+				</div>
+			</div>
+		<!--</div>-->
 	</div>
 	
 	
