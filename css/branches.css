@@ -38,7 +38,8 @@ h5 {font-size: 1.6rem;}
 h6 {font-size: 1rem;}
 
 canvas, fieldset {
-	border: 1px solid gray;
+	border-top: 1px solid gray;
+	border-bottom: 1px solid gray;
 }
 
 /* styling the range sliders */
@@ -185,7 +186,7 @@ input[type=range]:focus::-ms-fill-upper {
 	border-color: lightgray;
 }
 
-@media(min-width: 550px) {
+@media(min-width: 650px) {
 	.panel-container, .canvas-container-outer {
 		display: inline-block;
 		vertical-align: top;
@@ -199,6 +200,10 @@ input[type=range]:focus::-ms-fill-upper {
 	}
 	.description {
 		margin: 0 12rem 2rem 12rem;
+	}
+	fieldset, canvas {
+		border-right: 1px solid gray;
+		border-left: 1px solid gray;
 	}
 }
 

@@ -9,9 +9,10 @@ var Branch_Params = (function() {
 						, attractor_frequency: 0.3
 						, max_creepers: 20
 						, creep_velocity: 50
-						, background_color: "#1c1c1c"
 						, creeper_color: "#33a8ff"
+						// background_color will be added by defineProperty down below in the Main constructor
 					};
+		
 		return thing;
 	}
 	
@@ -81,6 +82,29 @@ var Main = function(init) {
 	main.branch_params.main_hide_targets = main.hide_targets.bind(main);
 	main.branch_params.main_targets_visible = main.get_targets_visible.bind(main);
 	
+	// if we define this getter/setter here, we'll have access to the target 2d context to redraw the background
+	// while still keeping things nice and declarative looking on the branch_params object
+	var background_color = "#1c1c1c";
+	Object.defineProperty(main.branch_params, "background_color", {
+		get: function() {
+			//console.log("getting background_color");
+			return background_color;
+		},
+		set: function(val) {
+			//console.log("setting background_color");
+			background_color = val;
+			// redraw with new background color
+			main.target_ctx.clearRect(0, 0, main.target_elem.width, main.target_elem.height);
+			main.target_ctx.rect(0, 0, main.target_elem.width, main.target_elem.height);
+			main.target_ctx.fillStyle = main.branch_params.background_color;
+			main.target_ctx.fill();
+			// redraw targets if necessary
+			if (main.targets_visible) {
+				main.draw_targets();
+			}
+		}
+	});
+	
 	// test
 	main.frame_times = [];
 	
@@ -90,12 +114,34 @@ var Main = function(init) {
 	main.Pt = function(init) {
 		var pt = this;
 		
+		pt.check_params(init);
+		/*
 		if (init.x === undefined || init.y === undefined || (typeof init.x != "number") || (typeof init.y != "number")) {
 			throw new Error("problem with Pt init, no xy provided. Init: ", init);
 		}
-		
-		pt.x = init.x;
-		pt.y = init.y;
+		*/
+		if (init.pt) {
+			pt.x = init.pt.x;
+			pt.y = init.pt.y;
+		}
+		else {
+			pt.x = init.x;
+			pt.y = init.y;
+		}
+	};
+	
+	// check params will throw an error if unhappy with the Pt's init object, otherwise return nothing
+	main.Pt.prototype.check_params = function(init) {
+		// we could initialize with another Pt
+		if (init.pt != undefined && (init.pt instanceof main.Pt)) {
+			return;
+		}
+		// or with x,y
+		if (init.x != undefined && init.y != undefined && (typeof init.x === "number") && (typeof init.y === "number")) {
+			return;
+		}
+		// otherwise error
+		throw new Error("problem with Pt init, no xy or Pt provided. Init: ", init);
 	};
 	
 	// adds a scalar value to both x and y
@@ -134,6 +180,7 @@ var Main = function(init) {
 	main.Node = function(init) {
 		var node = this;
 		
+		/*
 		// check params
 		// we could initialize with a Pt
 		if (init.pt && init.pt instanceof main.Pt) {
@@ -147,6 +194,9 @@ var Main = function(init) {
 		else {
 			throw new Error("problem with Node init, neither a Pt nor an x,y provided. Init: " + init);
 		}
+		*/
+		node.check_params(init);
+		node.pt = new main.Pt(init);
 		
 		// handle id
 		if (init.id != undefined) {
@@ -162,6 +212,20 @@ var Main = function(init) {
 		if (node.is_target) {
 			main.all_target_nodes.push(node);
 		}
+	};
+	
+	// check params will throw an error if unhappy with the Node's init object, otherwise return nothing
+	main.Node.prototype.check_params = function(init) {
+		// we could initialize with a Pt object
+		if (init.pt && init.pt instanceof main.Pt) {
+			return;
+		}
+		// or we could have x,y coords
+		if (init.x != undefined && (typeof init.x === "number") && init.y != undefined && (typeof init.y === "number")) {
+			return;
+		}
+		// otherwise crash gracelessly
+		throw new Error("problem with Node init, neither a Pt nor an x,y provided. Init: " + init);
 	};
 	
 	main.Node.prototype.draw = function(ctx, color) {
@@ -208,6 +272,7 @@ var Main = function(init) {
 	main.Creeper = function(init) {
 		var creep = this;
 		
+		/*
 		// handle location -- init should contain a pt, or an x,y 
 		if (init.pt && (init.pt instanceof main.Pt)) {
 			creep.nd = main.add_node_for_creeper(init.pt);
@@ -223,20 +288,30 @@ var Main = function(init) {
 		creep.last_loc.pt.x = creep.nd.pt.y;
 		creep.last_loc.pt.y = creep.nd.pt.y;
 		
-		
+		// we're not doing this target business anymore
 		// init.target, if provided, should be an existing Node
 		if (init.target && (! init.target || (!(init.target instanceof main.Node)))) {
 			throw new Error("problem with Creeper init, target not provided or wrong type. Init: " + init);
 		}
 		creep.target = init.target || null;;
-		
-		// init.velocity, if provided, should be a number. indicates distance in px per sec
-		/*
-		if ((init.velocity != undefined) && (typeof init.velocity) != "number") {
-			throw new Error("problem with Creeper init, velocity not provided or wrong type. Init: " + init);
-		}
-		creep.init_velocity = init.velocity != undefined ? init.velocity : 50;
 		*/
+		
+		creep.check_params(init);
+		
+		// handle node location
+		creep.nd = main.add_node_for_creeper(init);
+		/*if (init.pt) {
+			creep.nd = main.add_node_for_creeper(init.pt);
+		}
+		else {
+			creep.nd = main.add_node_for_creeper(init);
+		}*/
+		// last loc is a node, it's the creeper's location on the last animation tick
+		
+		//console.log("creep.nd: ", creep.nd);
+		creep.last_loc = new main.Node({pt: creep.nd.pt});
+		creep.last_loc.pt.x = creep.nd.pt.y;
+		creep.last_loc.pt.y = creep.nd.pt.y;
 		
 		// handle id
 		if (init.id != undefined) {
@@ -247,9 +322,24 @@ var Main = function(init) {
 			creep.id = main.id_counter;
 		}
 		
-		//creep.color = init.color || "#004377";
 		creep.color = main.branch_params.creeper_color;
 		creep.dead = false;
+	};
+	
+	// check params will throw an error if unhappy with the Creeper's init object, otherwise return nothing
+	main.Creeper.prototype.check_params = function(init) {
+		var good = false;
+		
+		// we could start with a Pt object
+		if (init.pt && (init.pt instanceof main.Pt)) {
+			return;
+		}
+		// or an x,y is ok too
+		if (init.x != undefined && (typeof init.x === "number") && init.y != undefined && (typeof init.y === "number")) {
+			return;
+		}
+		
+		throw new Error("problem with Creeper init, no Pt or x,y provided. Init: " + init);
 	};
 	
 	// t_nd is the target node we're approaching, v is distance in px per sec
@@ -303,7 +393,7 @@ var Main = function(init) {
 		}
 		
 		// now add repulsion from other creepers
-		// this works, but doesn't look as cool. let's leave it turned off. 
+		// this works, but doesn't look as cool -- too much spreading. let's leave it turned off. 
 		// remember to add non-0 scaling factor if turning back on
 		/*
 		main.all_creepers.forEach(function(c) {
@@ -581,7 +671,7 @@ Main.prototype.click = function(e) {
 			one_creep = main.add_creeper({x: click_pt.x, y: click_pt.y}).split(true).split(true);
 			// now clear out grid nodes from the area we're spawning the creepers 
 			// so they won't die immediately
-			clear_list = one_creep.nd.get_target_nodes_within_distance(50);
+			clear_list = one_creep.nd.get_target_nodes_within_distance(40);
 			// clear out those nodes we found
 			clear_list.forEach(function(nd) {
 				nd.is_target = false;
@@ -803,9 +893,9 @@ function set_dimensions() {
 	var target_elem = document.getElementById("target_canvas");
 	
 	var ww = window.innerWidth;
-	if (ww < 650) {
-		creep_elem.width = (ww);
-		target_elem.width = (ww);
+	if (ww < 652) {
+		creep_elem.width = (ww - 2);
+		target_elem.width = (ww - 2);
 	}
 	
 	var branch_params = Branch_Params.get_inst();
