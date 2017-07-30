@@ -7,7 +7,7 @@ var Branch_Params = (function() {
 						, num: 2
 						, grid_unit: 7
 						, attractor_frequency: 0.3
-						, max_creepers: 20
+						, max_creepers: 30
 						, creep_velocity: 50
 						, creeper_color: "#33a8ff"
 						// background_color will be added by defineProperty down below in the Main constructor
@@ -74,24 +74,16 @@ var Main = function(init) {
 	
 	// put some Main methods and properties in branch_params for use in angular
 	main.branch_params.main_init = main.init.bind(main);
-	main.branch_params.main_resume_anim = main.resume_anim.bind(main);
-	main.branch_params.main_pause_anim = main.pause_anim.bind(main);
-	main.branch_params.main_anim_running = main.get_anim_running.bind(main);
-	main.branch_params.main_paused = main.get_paused.bind(main);
-	main.branch_params.main_draw_targets = main.draw_targets.bind(main);
-	main.branch_params.main_hide_targets = main.hide_targets.bind(main);
-	main.branch_params.main_targets_visible = main.get_targets_visible.bind(main);
+	main.branch_params.main_anim_running = main.anim_running;
 	
-	// if we define this getter/setter here, we'll have access to the target 2d context to redraw the background
-	// while still keeping things nice and declarative looking on the branch_params object
+	// if we define these getter/setters on branch_params here, we'll have access to Main properties 
+	// while still keeping things nice and declarative looking on the branch params object for use in angular
 	var background_color = "#1c1c1c";
 	Object.defineProperty(main.branch_params, "background_color", {
 		get: function() {
-			//console.log("getting background_color");
 			return background_color;
 		},
 		set: function(val) {
-			//console.log("setting background_color");
 			background_color = val;
 			// redraw with new background color
 			main.target_ctx.clearRect(0, 0, main.target_elem.width, main.target_elem.height);
@@ -105,8 +97,43 @@ var Main = function(init) {
 		}
 	});
 	
-	// test
-	main.frame_times = [];
+	Object.defineProperty(main.branch_params, "paused", {
+		get: function() {
+			return main.paused;
+		},
+		set: function(val) {
+			main.paused = val;
+			// if we're pausing
+			if (val) {
+				main.stop_anim();
+			}
+			// or if we're unpausing
+			else {
+				// not going to do this if we're finished instead of just paused
+				if (!main.finished) {
+					main.start_anim();
+				}
+			}
+		}
+	});
+	
+	Object.defineProperty(main.branch_params, "targets_visible", {
+		get: function() {
+			return main.targets_visible;
+		},
+		set: function(val) {
+			main.targets_visible = val;
+			
+			// if we're making the targets visible
+			if (val) {
+				main.draw_targets();
+			}
+			// if we're making them invisible
+			else {
+				main.hide_targets();
+			}
+		}
+	});
 	
 	//********** object types
 	
@@ -115,11 +142,7 @@ var Main = function(init) {
 		var pt = this;
 		
 		pt.check_params(init);
-		/*
-		if (init.x === undefined || init.y === undefined || (typeof init.x != "number") || (typeof init.y != "number")) {
-			throw new Error("problem with Pt init, no xy provided. Init: ", init);
-		}
-		*/
+		
 		if (init.pt) {
 			pt.x = init.pt.x;
 			pt.y = init.pt.y;
@@ -141,7 +164,7 @@ var Main = function(init) {
 			return;
 		}
 		// otherwise error
-		throw new Error("problem with Pt init, no xy or Pt provided. Init: ", init);
+		throw new Error("problem with Pt init, no or invalid xy or Pt provided.");
 	};
 	
 	// adds a scalar value to both x and y
@@ -161,7 +184,7 @@ var Main = function(init) {
 		var pt = this;
 		
 		if (typeof val != "number") {
-			throw new Error("problem in Pt.add, val passed is not a number. val: " + val);
+			throw new Error("problem in Pt.mul, val passed is not a number. val: " + val);
 		}
 		
 		pt.x = pt.x * val;
@@ -180,21 +203,6 @@ var Main = function(init) {
 	main.Node = function(init) {
 		var node = this;
 		
-		/*
-		// check params
-		// we could initialize with a Pt
-		if (init.pt && init.pt instanceof main.Pt) {
-			node.pt = new main.Pt({x: init.pt.x, y: init.pt.y});
-		}
-		// or we could have x,y coords
-		else if (init.x != undefined && (typeof init.x === "number") && init.y != undefined && (typeof init.y === "number")) {
-			node.pt = new main.Pt({x: init.x, y: init.y});
-		}
-		// otherwise crash gracelessly
-		else {
-			throw new Error("problem with Node init, neither a Pt nor an x,y provided. Init: " + init);
-		}
-		*/
 		node.check_params(init);
 		node.pt = new main.Pt(init);
 		
@@ -248,67 +256,15 @@ var Main = function(init) {
 		return q;
 	};
 	
-	// marks and returns array of randomly selected grid nodes within a given distance of this node
-	/*
-	main.Node.prototype.pick_target_nodes = function(dist) {
-		var node = this;
-		
-		var close = node.get_nodes_within_distance(dist), q = [];
-		close.forEach(function(nd) {
-			var d = main.get_node_distance(node, nd);
-			var keep = !!Math.round(Math.random()); // gets us a random boolean
-			// only add to array if the node is not already a target
-			if (keep && ! nd.is_target) {
-				nd.is_target = true;
-				q.push(nd);
-			}
-		});
-		
-		return q;
-	};
-	*/
-	
 	// Creeper -- creeps up all around
 	main.Creeper = function(init) {
 		var creep = this;
-		
-		/*
-		// handle location -- init should contain a pt, or an x,y 
-		if (init.pt && (init.pt instanceof main.Pt)) {
-			creep.nd = main.add_node_for_creeper(init.pt);
-		}
-		else if (init.x != undefined && (typeof init.x === "number") && init.y != undefined && (typeof init.y === "number")) {
-			creep.nd = main.add_node_for_creeper(init);
-		}
-		else {
-			throw new Error("problem with Creeper init, no Pt or x,y provided. Init: " + init);
-		}
-		// last loc is a node, it's the creeper's location on the last animation tick
-		creep.last_loc = new main.Node({pt: creep.nd.pt});
-		creep.last_loc.pt.x = creep.nd.pt.y;
-		creep.last_loc.pt.y = creep.nd.pt.y;
-		
-		// we're not doing this target business anymore
-		// init.target, if provided, should be an existing Node
-		if (init.target && (! init.target || (!(init.target instanceof main.Node)))) {
-			throw new Error("problem with Creeper init, target not provided or wrong type. Init: " + init);
-		}
-		creep.target = init.target || null;;
-		*/
 		
 		creep.check_params(init);
 		
 		// handle node location
 		creep.nd = main.add_node_for_creeper(init);
-		/*if (init.pt) {
-			creep.nd = main.add_node_for_creeper(init.pt);
-		}
-		else {
-			creep.nd = main.add_node_for_creeper(init);
-		}*/
 		// last loc is a node, it's the creeper's location on the last animation tick
-		
-		//console.log("creep.nd: ", creep.nd);
 		creep.last_loc = new main.Node({pt: creep.nd.pt});
 		creep.last_loc.pt.x = creep.nd.pt.y;
 		creep.last_loc.pt.y = creep.nd.pt.y;
@@ -361,13 +317,13 @@ var Main = function(init) {
 		var dt = Date.now() - main.last_tick;
 		var creep_dist = (v/1000.0) * dt;
 		
-		// now direction, determined by all targets
+		// now direction, determined by all targets within a fixed distance
 		var accum = new main.Pt({x: 0, y: 0});
 		main.all_target_nodes.forEach(function(t) {
 			if (! t.is_target) {
 				return;
 			}
-			// first check to see if the creeper should die
+			// first check to see if the creeper should die from encountering the target
 			var dist = main.get_node_distance(creep.nd, t);
 			if (dist <= 3.0) {
 				creep.dead = true;
@@ -459,7 +415,7 @@ var Main = function(init) {
 	main.Creeper.prototype.check_dead = function() {
 		var creep = this;
 		
-		// I could put some more stuff here -- currently all handled in .approach method
+		// there's logic that really belongs here, but it's currently all handled in .approach method
 		
 		return creep.dead;
 	};
@@ -471,9 +427,10 @@ var Main = function(init) {
 	};
 };
 
-// initialized everything
+// initialize everything
 Main.prototype.init = function() {
 	var main = this;
+	
 	main.id_counter = 0;
 	main.all_creepers = [];
 	main.all_target_nodes = [];
@@ -484,26 +441,8 @@ Main.prototype.init = function() {
 		window.clearInterval(main.int);
 	}
 	main.int = null;
+	
 	main.run();
-};
-
-// random getters for broadcast through branch_params
-Main.prototype.get_anim_running = function() {
-	var main = this;
-	
-	return main.anim_running;
-};
-
-Main.prototype.get_paused = function() {
-	var main = this;
-	
-	return main.paused;
-};
-
-Main.prototype.get_targets_visible = function() {
-	var main = this;
-	
-	return main.targets_visible;
 };
 
 // same as main.add_node but does not add to main.nodes_pos_dict
@@ -704,23 +643,6 @@ Main.prototype.on_blur = function() {
 	}
 };
 
-Main.prototype.pause_anim = function() {
-	var main = this;
-	
-	main.paused = true;
-	main.stop_anim();
-};
-
-Main.prototype.resume_anim = function() {
-	var main = this;
-	
-	main.paused = false;
-	// let's not do this if we're actually finished
-	if (!main.finished) {
-		main.start_anim();
-	}
-};
-
 Main.prototype.click_pos = function(e) {
 	var main = this;
 	
@@ -775,7 +697,6 @@ Main.prototype.tick = function() {
 		main.process_creepers();
 
 		// finally
-		main.frame_times.push(Date.now() - main.last_tick);
 		main.last_tick = Date.now();
 	}
 	catch(err) {
@@ -799,11 +720,6 @@ Main.prototype.stop_anim = function() {
 	window.clearInterval(main.int);
 	main.int = null;
 	main.anim_running = false;
-	
-	if (main.frame_times) {
-		mean(main.frame_times);
-	}
-	//console.log("frame_times: ", main.frame_times);
 };
 
 Main.prototype.start_anim = function() {
@@ -834,11 +750,8 @@ Main.prototype.setup_targets = function() {
 		for (y = 0; y < grid_count_y; y++) {
 			pos_x = (x * main.grid_unit);
 			pos_y = (y * main.grid_unit);
-			//if (!!Math.round(Math.random())) {
 			if (!! Math.trunc( (Math.random() + main.branch_params.attractor_frequency) )) {
 				nd = main.add_target_node({x: pos_x, y: pos_y});
-				//nd.is_target = true
-				//nd.draw("#afafaf");
 			}
 		}
 	}
@@ -884,18 +797,14 @@ Main.prototype.run = function() {
 	main.setup_targets();
 };
 
-//console.log("window details");
-//console.log(window.innerWidth);
-//console.log(window.innerHeight);
-
 function set_dimensions() {
 	var creep_elem = document.getElementById("creep_canvas");
 	var target_elem = document.getElementById("target_canvas");
 	
 	var ww = window.innerWidth;
-	console.log("window.innerWidth: ", ww);
+	//console.log("window.innerWidth: ", ww);
 	var client_width = document.body.clientWidth;
-	console.log("document.body.scrollWidth: ", client_width);
+	//console.log("document.body.scrollWidth: ", client_width);
 	var client_height = document.body.clientHeight;
 	if (client_width < 650) {
 		creep_elem.width = (client_width - 2);
@@ -906,7 +815,7 @@ function set_dimensions() {
 		target_elem.height = (Math.floor(client_height * 0.8));
 	}
 	
-	console.log("creep_elem.width: ", creep_elem.width);
+	//console.log("creep_elem.width: ", creep_elem.width);
 	
 	var branch_params = Branch_Params.get_inst();
 	
@@ -915,14 +824,6 @@ function set_dimensions() {
 
 var app;
 window.addEventListener("load", function() { 
-	//var creep_elem = document.getElementById("creep_canvas");
-	//var target_elem = document.getElementById("target_canvas");
-	
-	//window.setTimeout(set_dimensions, 5000);
 	set_dimensions();
-	
-	//var branch_params = Branch_Params.get_inst();
-	
-	//app = new Main({creep_elem: creep_elem, target_elem: target_elem, grid_unit: branch_params.grid_unit, wobble: 0, tick_interval: 33});
 });
 

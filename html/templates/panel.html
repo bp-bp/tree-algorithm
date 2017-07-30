@@ -26,10 +26,10 @@
 		<input type = "color" ng-model = "pn.branch_params.creeper_color"/>
 	</div>
 	<button ng-click = "pn.branch_params.main_init()">Reset</button>
-	<button ng-show = "pn.branch_params.main_paused()" ng-click = "pn.branch_params.main_resume_anim()">Resume</button>
-	<button ng-show = "! pn.branch_params.main_paused()" ng-click = "pn.branch_params.main_pause_anim()">Pause</button>
-	<button ng-show = "! pn.branch_params.main_targets_visible()" ng-click = "pn.branch_params.main_draw_targets()">Show Attractors</button>
-	<button ng-show = "pn.branch_params.main_targets_visible()" ng-click = "pn.branch_params.main_hide_targets()">Hide Attractors</button>
+	<button ng-show = "pn.branch_params.paused" ng-click = "pn.branch_params.paused = false">Resume</button>
+	<button ng-show = "! pn.branch_params.paused" ng-click = "pn.branch_params.paused = true">Pause</button>
+	<button ng-show = "! pn.branch_params.targets_visible" ng-click = "pn.branch_params.targets_visible = true">Show Attractors</button>
+	<button ng-show = "pn.branch_params.targets_visible" ng-click = "pn.branch_params.targets_visible = false">Hide Attractors</button>
 
 </fieldset>
 
