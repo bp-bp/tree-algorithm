@@ -26,10 +26,10 @@
 		<input type = "color" ng-model = "pn.branch_params.creeper_color"/>
 	</div>
 	<button ng-click = "pn.branch_params.main_init()">Reset</button>
-	<button ng-show = "pn.branch_params.paused" ng-click = "pn.branch_params.paused = false">Resume</button>
-	<button ng-show = "! pn.branch_params.paused" ng-click = "pn.branch_params.paused = true">Pause</button>
-	<button ng-show = "! pn.branch_params.targets_visible" ng-click = "pn.branch_params.targets_visible = true">Show Attractors</button>
-	<button ng-show = "pn.branch_params.targets_visible" ng-click = "pn.branch_params.targets_visible = false">Hide Attractors</button>
+	<button ng-click = "pn.branch_params.paused = !pn.branch_params.paused">{{pn.branch_params.paused ? "Resume" : "Pause"}}</button>
+	<!--<button ng-show = "! pn.branch_params.paused" ng-click = "pn.branch_params.paused = true">Pause</button>-->
+	<!--<button ng-show = "! pn.branch_params.targets_visible" ng-click = "pn.branch_params.targets_visible = true">Show Attractors</button>-->
+	<button ng-click = "pn.branch_params.targets_visible = !pn.branch_params.targets_visible">{{pn.branch_params.targets_visible ? "Hide Attractors" : "Show Attractors"}}</button>
 
 </fieldset>
 

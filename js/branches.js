@@ -7,9 +7,9 @@ var Branch_Params = (function() {
 						, num: 2
 						, grid_unit: 7
 						, attractor_frequency: 0.3
-						, max_creepers: 30
+						, max_creepers: 75
 						, creep_velocity: 50
-						, creeper_color: "#33a8ff"
+						, creeper_color: "#00ff3f"
 						// background_color will be added by defineProperty down below in the Main constructor
 					};
 		
