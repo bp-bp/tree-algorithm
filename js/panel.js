@@ -9,5 +9,5 @@ angular.module("panel").component("panel", {
 	bindings: {}
 	, controller: [panel_ctrl]
 	, controllerAs: "pn"
-	, templateUrl: "templates/panel.html"
+	, templateUrl: "html/templates/panel.html"
 });
