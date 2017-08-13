@@ -7,6 +7,7 @@
 	<script type = "text/javascript" src = "/js/lib/angular.min.js"></script>
 	<script type = "text/javascript" src = "/js/branches.js"></script>
 	<script type = "text/javascript" src = "/js/panel.js"></script>
+	<script type = "text/javascript" src = "/js/load.js"></script>
 	
 	<link rel = "stylesheet" type = "text/css" href = "/css/normalize.css">
 	<link rel = "stylesheet" type = "text/css" href = "/css/branches.css">
@@ -15,30 +16,28 @@
 
 
 <html>
-<body onload = "app.run()">
+<body onload = "branches_app.run()">
 	<header class = "page-head">
 		<h2>Branches</h2>
 	</header>
 	<div class = "wrapper">
-		<!--<div class = "inner-wrapper">-->
-			<p class = "description">The animation below uses a variation on the 'space colonization' algorithm for procedurally generating 
-			tree-like structures. Click within the canvas to begin the animation, and play with the controls to see how modifying the parameters
-			changes the outcome. Clicking the 'Show Attractors' button will illuminate the field of attraction nodes that are directing the 
-			growth direction of the branches.</p>
+		<p class = "description">The animation below uses a variation on the 'space colonization' algorithm for procedurally generating 
+		tree-like structures. Click within the canvas to begin the animation, and play with the controls to see how modifying the parameters
+		changes the outcome. Clicking the 'Show Attractors' button will illuminate the field of attraction nodes that are directing the 
+		growth direction of the branches.</p>
 
-			<div class = "panel-container" ng-app = "panel">
-				<panel></panel>
-			</div>
+		<div class = "panel-container" ng-app = "panel">
+			<panel></panel>
+		</div>
 
-			<div class = "canvas-container-outer">
-				<h5>Click below to start</h5>
-				<div class = "canvas-container-inner">
-					<!-- one canvas for drawing branches, one for drawing attractors -->
-					<canvas id = "creep_canvas" class = "main-canvas" width = "650px" height = "650px"></canvas>
-					<canvas id = "target_canvas" class = "main-canvas" width = "650px" height = "650px"></canvas>
-				</div>
+		<div class = "canvas-container-outer">
+			<h5>Click below to start</h5>
+			<div class = "canvas-container-inner">
+				<!-- one canvas for drawing branches, one for drawing attractors -->
+				<canvas id = "creep_canvas" class = "main-canvas" width = "650px" height = "650px"></canvas>
+				<canvas id = "target_canvas" class = "main-canvas" width = "650px" height = "650px"></canvas>
 			</div>
-		<!--</div>-->
+		</div>
 	</div>
 	
 	
