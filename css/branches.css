@@ -190,31 +190,7 @@ input[type=range]:focus::-ms-fill-upper {
 }
 /* range sliders complete */
 
-
-/* experiment */
-
-/*
-@keyframes slideDown {
-	0% {
-		transform: translateX(-100%);
-		
-	}
-	100% {
-		transform: translateX(0);
-	}
-}
-
-.wrapper {
-	animation: 1s ease-out 0s 1 slideDown;
-	overflow-y: hidden;
-	z-index: -1;
-}
-*/
-/* end experiment */
-
-
 .page-head {
-	/*background-color: #1c1c1c;*/
 	background-color: black;
 	color: white;
 	padding: 0.5rem;
