@@ -1,0 +1,162 @@
+.scp-container {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 4;
+}
+
+.scp-picker {
+	text-align: center;
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	margin-top: auto;
+	margin-bottom: auto;
+	background-color: #1c1c1c;
+	border: 2px solid gray;
+	z-index: 5;
+	padding: 1rem;
+	height: 12rem;
+	width: 100%;
+}
+
+@media(min-width: 350px) {
+	.scp-picker {
+		margin: auto;
+		width: 20rem;
+	}
+}
+
+/* handling the sliders -- first remove some default styles */
+.scp-range {
+	-webkit-appearance: none;
+	background-color: transparent;
+	width: 100%;
+	height: 16px;
+	padding: 0;
+}
+.scp-range:focus {
+	outline: none;
+}
+
+
+/* style tracks */
+
+/* red */
+#scp-red-input::-webkit-slider-runnable-track {
+	background: -webkit-linear-gradient(left, rgb(0, 0, 0), rgb(255, 0, 0));
+	background: linear-gradient(left, rgb(0, 0, 0), rgb(255, 0, 0));
+	height: 10px;
+	border-radius: 2px;
+}
+#scp-red-input::-moz-range-track {
+	background: -moz-linear-gradient(left, rgb(0, 0, 0), rgb(255, 0, 0));
+	background: linear-gradient(left, rgb(0, 0, 0), rgb(255, 0, 0));
+	height: 10px;
+	border-radius: 2px;
+}
+#scp-red-input::-ms-track {
+	background: -ms-linear-gradient(left, rgb(0, 0, 0), rgb(255, 0, 0));
+	background: linear-gradient(left, rgb(0, 0, 0), rgb(255, 0, 0));
+	height: 10px;
+	border-radius: 2px;
+}
+
+/* green */
+#scp-green-input::-webkit-slider-runnable-track {
+	background: -webkit-linear-gradient(left, rgb(0, 0, 0), rgb(0, 255, 0));
+	background: linear-gradient(left, rgb(0, 0, 0), rgb(0, 255, 0));
+	height: 10px;
+	border-radius: 2px;
+}
+#scp-green-input::-moz-range-track {
+	background: -moz-linear-gradient(left, rgb(0, 0, 0), rgb(0, 255, 0));
+	background: linear-gradient(left, rgb(0, 0, 0), rgb(0, 255, 0));
+	height: 10px;
+	border-radius: 2px;
+}
+#scp-green-input::-ms-track {
+	background: -ms-linear-gradient(left, rgb(0, 0, 0), rgb(0, 255, 0));
+	background: linear-gradient(left, rgb(0, 0, 0), rgb(0, 255, 0));
+	height: 10px;
+	border-radius: 2px;
+}
+
+/* blue */
+#scp-blue-input::-webkit-slider-runnable-track {
+	background: -webkit-linear-gradient(left, rgb(0, 0, 0), rgb(0, 0, 255));
+	background: linear-gradient(left, rgb(0, 0, 0), rgb(0, 0, 255));
+	height: 10px;
+	border-radius: 2px;
+}
+#scp-blue-input::-moz-range-track {
+	background: -moz-linear-gradient(left, rgb(0, 0, 0), rgb(0, 0, 255));
+	background: linear-gradient(left, rgb(0, 0, 0), rgb(0, 0, 255));
+	height: 10px;
+	border-radius: 2px;
+}
+#scp-blue-input::-ms-track {
+	background: -ms-linear-gradient(left, rgb(0, 0, 0), rgb(0, 0, 255));
+	background: linear-gradient(left, rgb(0, 0, 0), rgb(0, 0, 255));
+	height: 10px;
+	border-radius: 2px;
+}
+/* some special extras for ms */
+.scp-range::-ms-track, .scp-range::-ms-fill-lower {
+	background: transparent;
+	background-color: transparent;
+	border-color: transparent;
+	color: transparent;
+}
+
+/* now do the thumbs */
+/* have to zero out the webkit thumb first, not the others */
+.scp-range::-webkit-slider-thumb {
+	-webkit-appearance: none;
+}
+.scp-range::-webkit-slider-thumb {
+	height: 16px;
+	width: 10px; /* add 2px for border in webkit only */
+	margin-top: -3px; /* webkit only funkyness */
+	border: 1px solid black;
+	border-radius: 2px;
+	background: gray;
+	cursor: pointer;
+}
+.scp-range::-ms-thumb {
+	height: 16px;
+	width: 8px;
+	border: 1px solid black;
+	border-radius: 2px;
+	background: gray;
+	cursor: pointer;
+	border: 1px solid #000000;
+}
+.scp-range::-moz-range-thumb {
+	height: 16px;
+	width: 8px;
+	border: 1px solid black;
+	border-radius: 2px;
+	background: gray;
+	cursor: pointer;
+}
+
+/* color indicator fields */
+#scp-indicator {
+	width: 4rem;
+	height: 4rem;
+	border: 2px solid gray;
+	border-radius: 50%;
+	display: inline-block;
+}
+#scp-ext-indicator {
+	width: 3rem;
+	height: 1.5rem;
+	border: 2px solid gray;
+	border-radius: 3px;
+	display: inline-block;
+}

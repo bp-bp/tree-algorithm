@@ -10,7 +10,7 @@ var Branch_Params = (function() {
 						, max_creepers: 400
 						, max_creepers_per_spawn: 50
 						, creep_velocity: 50
-						, creeper_color: "#ffffff"
+						, creeper_color: "#5ff442"
 						// background_color will be added by defineProperty down below in the Main constructor
 					};
 		

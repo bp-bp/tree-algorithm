@@ -21,11 +21,11 @@
 	<div class = "spacer-bottom">
 		<div class = "ib">
 			Background Color
-			<input type = "color" ng-model = "pn.branch_params.background_color"/>
+			<slider-color-picker ng-model = "pn.branch_params.background_color"></slider-color-picker>
 		</div>
 		<div class = "ib">
 			Branch Color
-			<input type = "color" ng-model = "pn.branch_params.creeper_color"/>
+			<slider-color-picker ng-model = "pn.branch_params.creeper_color"></slider-color-picker>
 		</div>
 	</div>
 	<button ng-click = "pn.branch_params.main_reset()">Reset</button>

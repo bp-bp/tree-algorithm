@@ -1,7 +1,8 @@
-angular.module("panel", []);
+angular.module("panel", ["slider-color-picker"]);
 
 function panel_ctrl() {
-	this.branch_params = Branch_Params.get_inst();
+	var self = this;
+	self.branch_params = Branch_Params.get_inst();
 }
 
 angular.module("panel").controller("panel_ctrl", [panel_ctrl]);
